@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { AdminSubnav } from "@/components/admin/AdminSubnav";
 
 /**
  * Gate the entire /admin tree on role='admin'. Non-admins (including
@@ -16,5 +17,10 @@ export default async function AdminLayout({
   if (!viewer || viewer.role !== "admin") {
     redirect("/clients");
   }
-  return <>{children}</>;
+  return (
+    <>
+      <AdminSubnav />
+      {children}
+    </>
+  );
 }

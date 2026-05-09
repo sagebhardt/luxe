@@ -44,15 +44,20 @@ export function Nav({
             {activeAgentCount} agent{activeAgentCount === 1 ? "" : "s"} running
           </div>
         ) : null}
-        <div className="nav-badge">Tokyo · May 2026</div>
         {isAdmin ? (
           <Link
-            href="/admin/models"
+            href="/admin/users"
             className={`admin-link${pathname?.startsWith("/admin") ? " active" : ""}`}
           >
             Admin
           </Link>
         ) : null}
+        <Link
+          href="/settings"
+          className={`admin-link${pathname?.startsWith("/settings") ? " active" : ""}`}
+        >
+          Settings
+        </Link>
         <UserButton
           appearance={{
             elements: { avatarBox: { width: 28, height: 28 } },

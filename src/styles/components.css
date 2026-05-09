@@ -6497,3 +6497,275 @@
   text-transform: uppercase;
   color: var(--stone-lt);
 }
+
+/* =====================================================
+   ADMIN — sub-nav, users table, settings page
+   ===================================================== */
+
+.admin-subnav {
+  display: flex;
+  gap: 16px;
+  padding: 18px 48px;
+  border-bottom: 1px solid var(--border);
+  background: var(--ivory);
+  max-width: 100%;
+}
+
+.admin-subnav-tab {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stone);
+  padding: 6px 12px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.admin-subnav-tab:hover {
+  color: var(--ink);
+  background: var(--warm-white);
+}
+
+.admin-subnav-tab.active {
+  color: var(--forest);
+  background: var(--warm-white);
+  border: 1px solid var(--forest-border);
+}
+
+.admin-summary {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.admin-summary-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.admin-summary-num {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--forest);
+  font-feature-settings: "tnum";
+}
+
+.admin-summary-num.warn {
+  color: var(--rust);
+}
+
+.admin-summary-lbl {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+}
+
+.admin-invite-hint {
+  margin: 0 0 24px;
+  padding: 14px 18px;
+  background: var(--ivory);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--charcoal);
+  line-height: 1.55;
+}
+
+.admin-invite-hint strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: var(--warm-white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  font-feature-settings: "tnum";
+}
+
+.users-table th {
+  text-align: left;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--ivory);
+}
+
+.users-table th.num,
+.users-table td.num {
+  text-align: right;
+}
+
+.users-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-lt);
+  color: var(--charcoal);
+  vertical-align: middle;
+}
+
+.users-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.users-row-pending {
+  opacity: 0.55;
+}
+
+.users-name {
+  color: var(--ink);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.users-me {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bark);
+  background: rgba(196, 168, 130, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.users-email {
+  color: var(--stone);
+  font-size: 11px;
+}
+
+.users-since {
+  color: var(--stone-lt);
+  font-size: 11px;
+}
+
+.users-select {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  background: var(--warm-white);
+  border-radius: 4px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--ink);
+}
+
+.users-select:disabled {
+  background: var(--ivory);
+  color: var(--stone);
+  cursor: not-allowed;
+}
+
+.users-select.warn {
+  border-color: var(--rust);
+  color: var(--rust);
+}
+
+.users-error {
+  color: var(--rust);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.users-error-inline {
+  color: var(--rust);
+  font-size: 10px;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.muted {
+  color: var(--stone-lt);
+  font-style: italic;
+}
+
+/* Tag pill colors used in /admin/clients */
+.mock-pill-vip {
+  background: var(--forest);
+  color: var(--ivory);
+  border-color: var(--forest);
+}
+
+.mock-pill-active {
+  background: rgba(122, 158, 136, 0.18);
+  color: var(--forest);
+}
+
+.mock-pill-prospect {
+  background: var(--ivory);
+  color: var(--stone);
+}
+
+.mock-pill-dormant {
+  background: rgba(196, 168, 130, 0.15);
+  color: var(--bark);
+}
+
+/* -------- Settings cards -------- */
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+@media (max-width: 800px) {
+  .settings-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.settings-card {
+  background: var(--warm-white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 22px 24px;
+}
+
+.settings-card.accent {
+  background: var(--ivory);
+  border-color: var(--forest-border);
+}
+
+.settings-card-lbl {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.settings-card-val {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 26px;
+  color: var(--ink);
+  font-feature-settings: "tnum";
+}
+
+.settings-card.accent .settings-card-val {
+  color: var(--forest);
+}
+
+.settings-card-note {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  margin-top: 4px;
+}
