@@ -34,6 +34,12 @@ export function Nav({ activeAgentCount }: { activeAgentCount: number }) {
           {activeAgentCount} agents active
         </div>
         <div className="nav-badge">Tokyo · May 2026</div>
+        <Link
+          href="/admin/models"
+          className={`admin-link${pathname?.startsWith("/admin") ? " active" : ""}`}
+        >
+          Admin
+        </Link>
       </div>
     </nav>
   );

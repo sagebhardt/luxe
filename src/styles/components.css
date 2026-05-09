@@ -96,6 +96,29 @@
   color: var(--stone);
 }
 
+.admin-link {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--stone);
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.admin-link:hover {
+  color: var(--forest);
+  border-color: var(--forest-border);
+}
+
+.admin-link.active {
+  color: var(--forest);
+  border-color: var(--forest-border);
+  background: var(--forest-dim);
+}
+
 .pulse {
   width: 7px;
   height: 7px;
@@ -1273,4 +1296,255 @@
   background: rgba(45, 64, 56, 0.06);
   color: var(--stone);
   border-color: rgba(45, 64, 56, 0.1) !important;
+}
+
+/* ════════════════════════
+   ADMIN
+════════════════════════ */
+.admin-main {
+  height: calc(100vh - var(--nav-h));
+  overflow-y: auto;
+  padding: 36px 48px;
+  background: var(--cream);
+  width: 100%;
+}
+
+.admin-header {
+  margin-bottom: 28px;
+  animation: up 0.45s ease both;
+}
+
+.admin-heading {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--forest);
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.admin-sub {
+  font-size: 12px;
+  color: var(--stone);
+  line-height: 1.6;
+  max-width: 640px;
+}
+
+.admin-section {
+  margin-bottom: 36px;
+  animation: up 0.45s 0.06s ease both;
+}
+
+.admin-section-head {
+  margin-bottom: 12px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--warm-white);
+  border: 1px solid var(--border-lt);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.admin-table th {
+  text-align: left;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--ivory);
+}
+
+.admin-table td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--border-lt);
+  font-size: 12px;
+  color: var(--ink);
+  vertical-align: middle;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tr:hover td:not(:has(form)) {
+  background: rgba(45, 64, 56, 0.02);
+}
+
+.admin-table code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  background: rgba(45, 64, 56, 0.05);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.kind-pill {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 3px;
+  background: var(--forest-dim);
+  color: var(--forest);
+  text-transform: lowercase;
+}
+
+.config-preview,
+.prompt-preview {
+  display: block;
+  max-width: 280px;
+  font-size: 10px;
+  color: var(--stone);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.row-actions .err {
+  display: block;
+  font-size: 10px;
+  color: var(--rust);
+  margin-top: 4px;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--forest);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-left: 4px;
+}
+
+.link-btn:hover {
+  color: var(--forest-mid);
+  text-decoration: underline;
+}
+
+.link-btn-danger {
+  color: var(--rust);
+}
+
+.link-btn-danger:hover {
+  color: var(--rust);
+  opacity: 0.85;
+}
+
+.admin-form {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px 16px;
+  padding: 18px 20px;
+  background: var(--ivory);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.add-form {
+  margin-top: 14px;
+}
+
+.add-row {
+  margin-top: 14px;
+}
+
+.admin-form .form-row {
+  display: contents;
+}
+
+.admin-form label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  align-self: center;
+}
+
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+  background: var(--warm-white);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.admin-form textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  resize: vertical;
+}
+
+.admin-form input:focus,
+.admin-form select:focus,
+.admin-form textarea:focus {
+  border-color: var(--forest-border);
+}
+
+.admin-form input:disabled {
+  background: rgba(45, 64, 56, 0.04);
+  color: var(--stone);
+}
+
+.admin-form .form-row.checkbox label {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 12px;
+  color: var(--ink);
+  font-weight: 400;
+}
+
+.admin-form .form-row.checkbox input {
+  width: auto;
+}
+
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.form-actions .err {
+  font-size: 11px;
+  color: var(--rust);
+  margin-left: 8px;
+}
+
+.admin-empty {
+  text-align: center;
+  color: var(--stone);
+  font-size: 12px;
+  padding: 24px;
+}
+
+.agent-cell {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 14px !important;
+  color: var(--forest);
 }
