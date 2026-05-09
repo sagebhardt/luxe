@@ -495,6 +495,140 @@
   margin-left: 8px;
 }
 
+/* Briefing-specific tweaks */
+.briefing-card {
+  max-width: 640px;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.briefing-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.briefing-loading {
+  padding: 32px 0;
+  text-align: center;
+  color: var(--stone);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.briefing-error {
+  padding: 24px;
+  color: var(--rust);
+  font-size: 12px;
+  background: var(--rust-dim);
+  border-radius: 6px;
+}
+
+.briefing-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.briefing-h {
+  font-family: var(--font-body);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  margin: 0 0 8px;
+}
+
+.briefing-content p {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.briefing-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.briefing-list li {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border-lt);
+}
+
+.briefing-list li:last-child {
+  border-bottom: none;
+}
+
+.urg-pill {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+  text-align: center;
+  align-self: start;
+}
+
+.urg-high {
+  background: rgba(158, 91, 58, 0.12);
+  color: var(--rust);
+}
+
+.urg-medium {
+  background: rgba(196, 168, 130, 0.18);
+  color: #8a6e40;
+}
+
+.urg-low {
+  background: rgba(122, 158, 136, 0.12);
+  color: var(--forest-mid);
+}
+
+.briefing-item-title {
+  font-size: 12px;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.briefing-item-note {
+  font-size: 11px;
+  color: var(--stone);
+  line-height: 1.5;
+}
+
+.briefing-list-simple {
+  list-style: disc inside;
+  margin: 0;
+  padding: 0 0 0 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.briefing-list-simple li {
+  font-size: 12px;
+  color: var(--charcoal);
+  line-height: 1.55;
+}
+
+.briefing-list-simple.watch-outs li {
+  color: var(--rust);
+}
+
 /* SECTION LABEL */
 .sec-lbl {
   font-size: 9px;

@@ -1,5 +1,6 @@
 import type { clients } from "@/lib/db/schema";
 import { NewTripButton } from "./NewTripButton";
+import { BriefingButton } from "./BriefingButton";
 
 type Client = typeof clients.$inferSelect;
 
@@ -51,7 +52,7 @@ export function ProfileHeader({ client }: { client: Client }) {
         </div>
       </div>
       <div className="profile-actions">
-        <button className="btn btn-outline">Message</button>
+        <BriefingButton clientId={client.id} clientName={client.name} />
         <NewTripButton clientId={client.id} />
       </div>
     </div>
