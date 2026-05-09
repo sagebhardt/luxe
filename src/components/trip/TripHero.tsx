@@ -18,21 +18,29 @@ type Financials = {
   baseCurrency: string;
   sellInBase: number;
   costInBase: number;
+  margin: number;
   marginPct: number | null;
+  itdShare: number;
+  odylicShare: number;
+  itdSharePct: number;
   unlockedCount: number;
   hasAnyData: boolean;
 };
+
+type ViewerCtx = { role: "itd" | "admin" };
 
 export function TripHero({
   trip,
   client,
   shareTokens,
   financials,
+  viewer,
 }: {
   trip: Trip;
   client: Client;
   shareTokens: Token[];
   financials: Financials;
+  viewer: ViewerCtx;
 }) {
   const committedPct = pct(trip.committedCents, trip.budgetCents ?? 0);
   return (
@@ -84,6 +92,29 @@ export function TripHero({
                   ) : null}
                 </>
               ) : null}
+            </div>
+          ) : null}
+          {financials.hasAnyData && financials.margin > 0 ? (
+            <div className="trip-margin-split">
+              <span className="tm-label">ITD</span>{" "}
+              <em>
+                {formatAmountShort(
+                  financials.itdShare,
+                  financials.baseCurrency,
+                )}
+              </em>
+              &nbsp;·&nbsp;<span className="tm-label">Odylic</span>{" "}
+              <em>
+                {formatAmountShort(
+                  financials.odylicShare,
+                  financials.baseCurrency,
+                )}
+              </em>
+              <span className="tm-split-pct">
+                &nbsp;{Math.round(financials.itdSharePct * 100)}/
+                {Math.round((1 - financials.itdSharePct) * 100)}
+                {viewer.role === "admin" ? " · admin view" : ""}
+              </span>
             </div>
           ) : null}
         </div>

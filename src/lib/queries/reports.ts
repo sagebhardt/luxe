@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { appSettings, bookings, clients, trips } from "@/lib/db/schema";
+import { appSettings, bookings, clients, trips, users } from "@/lib/db/schema";
 import { getRate } from "@/lib/fx";
 import type { Viewer } from "@/lib/auth";
 
@@ -21,6 +21,8 @@ export type ReportTotals = {
   cost: number;
   margin: number;
   marginPct: number | null;
+  itdShare: number;
+  odylicShare: number;
   tripCount: number;
   unlockedLines: number;
 };
@@ -35,6 +37,8 @@ export type ReportSummary = {
   totals: ReportTotals;
   byDestination: ReportGroup[];
   byMonth: ReportGroup[];
+  /** Per-ITD breakdown — only populated for admins. */
+  byItd: ReportGroup[] | null;
 };
 
 async function getReportingCurrency(): Promise<string> {
@@ -93,10 +97,14 @@ export async function getReportSummary(viewer: Viewer): Promise<ReportSummary> {
       costCurrency: bookings.costCurrency,
       costFxToBase: bookings.costFxToBase,
       costLocked: bookings.costLocked,
+      ownerId: clients.ownerId,
+      ownerName: users.name,
+      ownerCommissionPctBase: users.commissionPctBase,
     })
     .from(bookings)
     .innerJoin(trips, eq(trips.id, bookings.tripId))
     .innerJoin(clients, eq(clients.id, trips.clientId))
+    .leftJoin(users, eq(users.id, clients.ownerId))
     .where(and(...conditions));
 
   /* Cache cross rates so we hit `getRate` once per pair. */
@@ -114,12 +122,16 @@ export async function getReportSummary(viewer: Viewer): Promise<ReportSummary> {
   type Bucket = {
     sell: number;
     cost: number;
+    itdShare: number;
+    odylicShare: number;
     tripIds: Set<string>;
     unlockedLines: number;
   };
   const blank = (): Bucket => ({
     sell: 0,
     cost: 0,
+    itdShare: 0,
+    odylicShare: 0,
     tripIds: new Set(),
     unlockedLines: 0,
   });
@@ -127,6 +139,7 @@ export async function getReportSummary(viewer: Viewer): Promise<ReportSummary> {
   const totals = blank();
   const byDest = new Map<string, Bucket & { label: string }>();
   const byMonth = new Map<string, Bucket & { label: string }>();
+  const byItd = new Map<string, Bucket & { label: string }>();
 
   for (const r of rows) {
     const baseToReporting = await rateOf(
@@ -153,29 +166,41 @@ export async function getReportSummary(viewer: Viewer): Promise<ReportSummary> {
         Number(r.costAmount) * costToBase * baseToReporting;
     }
 
-    totals.sell += sellInReport;
-    totals.cost += costInReport;
-    totals.tripIds.add(r.tripId);
-    totals.unlockedLines += unlocked;
+    /* Compute commission split for this booking based on the owning
+     * ITD's tier. Falls back to 50/50 if owner is null. */
+    const lineMargin = sellInReport - costInReport;
+    const itdPct = Number(r.ownerCommissionPctBase ?? "0.5");
+    const lineItdShare = lineMargin * itdPct;
+    const lineOdylicShare = lineMargin - lineItdShare;
+
+    const accumulate = (b: Bucket) => {
+      b.sell += sellInReport;
+      b.cost += costInReport;
+      b.itdShare += lineItdShare;
+      b.odylicShare += lineOdylicShare;
+      b.tripIds.add(r.tripId);
+      b.unlockedLines += unlocked;
+    };
+
+    accumulate(totals);
 
     const dest = r.destination?.trim() || "(unspecified)";
     if (!byDest.has(dest)) byDest.set(dest, { ...blank(), label: dest });
-    const dBucket = byDest.get(dest)!;
-    dBucket.sell += sellInReport;
-    dBucket.cost += costInReport;
-    dBucket.tripIds.add(r.tripId);
-    dBucket.unlockedLines += unlocked;
+    accumulate(byDest.get(dest)!);
 
     const month = monthKey(r.startDate);
     if (month) {
       if (!byMonth.has(month.key))
         byMonth.set(month.key, { ...blank(), label: month.label });
-      const mBucket = byMonth.get(month.key)!;
-      mBucket.sell += sellInReport;
-      mBucket.cost += costInReport;
-      mBucket.tripIds.add(r.tripId);
-      mBucket.unlockedLines += unlocked;
+      accumulate(byMonth.get(month.key)!);
     }
+
+    /* By ITD — only populated for admin's view, but cheaper to fill
+     * here unconditionally and let the caller decide whether to surface. */
+    const itdKey = r.ownerId ?? "unassigned";
+    const itdLabel = r.ownerName?.trim() || "(unassigned)";
+    if (!byItd.has(itdKey)) byItd.set(itdKey, { ...blank(), label: itdLabel });
+    accumulate(byItd.get(itdKey)!);
   }
 
   const finalize = (b: Bucket): ReportTotals => ({
@@ -184,6 +209,8 @@ export async function getReportSummary(viewer: Viewer): Promise<ReportSummary> {
     cost: b.cost,
     margin: b.sell - b.cost,
     marginPct: b.sell > 0 ? ((b.sell - b.cost) / b.sell) * 100 : null,
+    itdShare: b.itdShare,
+    odylicShare: b.odylicShare,
     tripCount: b.tripIds.size,
     unlockedLines: b.unlockedLines,
   });
@@ -196,5 +223,11 @@ export async function getReportSummary(viewer: Viewer): Promise<ReportSummary> {
     byMonth: Array.from(byMonth.entries())
       .map(([key, b]) => ({ key, label: b.label, ...finalize(b) }))
       .sort((a, b) => a.key.localeCompare(b.key)),
+    byItd:
+      viewer.role === "admin"
+        ? Array.from(byItd.entries())
+            .map(([key, b]) => ({ key, label: b.label, ...finalize(b) }))
+            .sort((a, b) => b.sell - a.sell)
+        : null,
   };
 }

@@ -67,6 +67,7 @@ export default async function TripPage({
             client={trip.client}
             shareTokens={shareTokens}
             financials={financials}
+            viewer={{ role: viewer.role }}
           />
           <div className="section-divider" />
 

@@ -11,6 +11,7 @@ import {
   tripAlerts,
   trips,
   tripShareTokens,
+  users,
 } from "@/lib/db/schema";
 import type { Viewer } from "@/lib/auth";
 
@@ -241,21 +242,38 @@ export async function getTripBudget(
  * at lock time (historical accuracy). For unlocked rows we use today's
  * rate as an estimate; we surface the unlocked count so the hero can
  * mark the result as estimated.
+ *
+ * Commission split: looks up the trip's owning ITD's commissionPctBase
+ * (default 0.5 = 50/50). Returns itdShare and odylicShare derived
+ * from the total margin. If the trip has no owner (legacy/seed data
+ * not yet backfilled), defaults to 50/50.
  */
 export async function getTripFinancials(tripId: string): Promise<{
   baseCurrency: string;
   sellInBase: number;
   costInBase: number;
+  margin: number;
   marginPct: number | null;
+  itdShare: number;
+  odylicShare: number;
+  itdSharePct: number;
   unlockedCount: number;
   hasAnyData: boolean;
 }> {
   const { getRate } = await import("@/lib/fx");
-  const trip = await db.query.trips.findFirst({
-    where: eq(trips.id, tripId),
-    columns: { baseCurrency: true },
-  });
-  const baseCurrency = trip?.baseCurrency ?? "USD";
+  /* Pull trip + its owner's commission tier in one round-trip. */
+  const tripWithOwner = await db
+    .select({
+      baseCurrency: trips.baseCurrency,
+      commissionPctBase: users.commissionPctBase,
+    })
+    .from(trips)
+    .innerJoin(clients, eq(clients.id, trips.clientId))
+    .leftJoin(users, eq(users.id, clients.ownerId))
+    .where(eq(trips.id, tripId))
+    .limit(1);
+  const baseCurrency = tripWithOwner[0]?.baseCurrency ?? "USD";
+  const itdSharePct = Number(tripWithOwner[0]?.commissionPctBase ?? "0.5");
 
   const rows = await db
     .select({
@@ -298,14 +316,20 @@ export async function getTripFinancials(tripId: string): Promise<{
     }
   }
 
-  const marginPct =
-    sellInBase > 0 ? ((sellInBase - costInBase) / sellInBase) * 100 : null;
+  const margin = sellInBase - costInBase;
+  const marginPct = sellInBase > 0 ? (margin / sellInBase) * 100 : null;
+  const itdShare = margin * itdSharePct;
+  const odylicShare = margin - itdShare;
 
   return {
     baseCurrency,
     sellInBase,
     costInBase,
+    margin,
     marginPct,
+    itdShare,
+    odylicShare,
+    itdSharePct,
     unlockedCount,
     hasAnyData,
   };

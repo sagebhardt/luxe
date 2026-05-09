@@ -15,6 +15,7 @@ export default async function ReportsPage() {
     .from(appSettings)
     .limit(1);
   const reportingCurrency = settings?.ccy ?? "USD";
+  const isAdmin = viewer.role === "admin";
 
   return (
     <main className="reports-main">
@@ -22,8 +23,17 @@ export default async function ReportsPage() {
         <div>
           <h1 className="reports-heading">Reports</h1>
           <p className="reports-sub">
-            Margin across confirmed and pending bookings, rolled up to your
-            reporting currency.
+            {isAdmin ? (
+              <>
+                Vista de Odylic — margen y comisiones de toda la red de ITDs,
+                en la moneda de reporte.
+              </>
+            ) : (
+              <>
+                Tu cartera. Margen total de tus reservas y la comisión que te
+                corresponde según tu tier.
+              </>
+            )}
           </p>
         </div>
         <ReportingCurrencyForm current={reportingCurrency} />
@@ -56,13 +66,6 @@ export default async function ReportsPage() {
               )}
             />
             <Kpi
-              label="Cost"
-              value={formatAmountShort(
-                summary.totals.cost,
-                reportingCurrency,
-              )}
-            />
-            <Kpi
               label="Margin"
               value={formatAmountShort(
                 summary.totals.margin,
@@ -73,15 +76,47 @@ export default async function ReportsPage() {
                   ? `${summary.totals.marginPct.toFixed(1)}%`
                   : null
               }
-              accent
             />
+            {isAdmin ? (
+              <Kpi
+                label="Odylic share"
+                value={formatAmountShort(
+                  summary.totals.odylicShare,
+                  reportingCurrency,
+                )}
+                note="50/50 default · per-ITD tier"
+                accent
+              />
+            ) : (
+              <Kpi
+                label="Tu comisión"
+                value={formatAmountShort(
+                  summary.totals.itdShare,
+                  reportingCurrency,
+                )}
+                note="según tu tier"
+                accent
+              />
+            )}
           </section>
+
+          {isAdmin && summary.byItd ? (
+            <section className="reports-section">
+              <h2 className="reports-h2">Por ITD</h2>
+              <ReportTable
+                rows={summary.byItd}
+                reportingCurrency={reportingCurrency}
+                showSplit
+              />
+            </section>
+          ) : null}
 
           <section className="reports-section">
             <h2 className="reports-h2">By destination</h2>
             <ReportTable
               rows={summary.byDestination}
               reportingCurrency={reportingCurrency}
+              showSplit={isAdmin}
             />
           </section>
 
@@ -90,6 +125,7 @@ export default async function ReportsPage() {
             <ReportTable
               rows={summary.byMonth}
               reportingCurrency={reportingCurrency}
+              showSplit={isAdmin}
             />
           </section>
         </>
@@ -121,6 +157,7 @@ function Kpi({
 function ReportTable({
   rows,
   reportingCurrency,
+  showSplit,
 }: {
   rows: Array<{
     key: string;
@@ -129,10 +166,13 @@ function ReportTable({
     cost: number;
     margin: number;
     marginPct: number | null;
+    itdShare: number;
+    odylicShare: number;
     tripCount: number;
     unlockedLines: number;
   }>;
   reportingCurrency: string;
+  showSplit?: boolean;
 }) {
   if (rows.length === 0) {
     return <p className="reports-empty-line">No data.</p>;
@@ -144,8 +184,13 @@ function ReportTable({
           <th></th>
           <th className="num">Trips</th>
           <th className="num">Sell</th>
-          <th className="num">Cost</th>
           <th className="num">Margin</th>
+          {showSplit ? (
+            <>
+              <th className="num">ITD</th>
+              <th className="num">Odylic</th>
+            </>
+          ) : null}
           <th className="num">%</th>
         </tr>
       </thead>
@@ -158,11 +203,18 @@ function ReportTable({
               {formatAmountShort(r.sell, reportingCurrency)}
             </td>
             <td className="num">
-              {formatAmountShort(r.cost, reportingCurrency)}
-            </td>
-            <td className="num">
               {formatAmountShort(r.margin, reportingCurrency)}
             </td>
+            {showSplit ? (
+              <>
+                <td className="num">
+                  {formatAmountShort(r.itdShare, reportingCurrency)}
+                </td>
+                <td className="num">
+                  {formatAmountShort(r.odylicShare, reportingCurrency)}
+                </td>
+              </>
+            ) : null}
             <td className="num">
               {r.marginPct != null ? (
                 <em

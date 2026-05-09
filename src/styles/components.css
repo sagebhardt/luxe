@@ -6466,3 +6466,34 @@
     font-size: 11px;
   }
 }
+
+/* -------- Trip hero commission split line -------- */
+
+.trip-margin-split {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--charcoal);
+  font-feature-settings: "tnum";
+}
+
+.trip-margin-split .tm-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+}
+
+.trip-margin-split em {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  color: var(--forest);
+  font-size: 13px;
+}
+
+.tm-split-pct {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+}
