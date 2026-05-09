@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { UserButton } from "@clerk/nextjs";
 
 const TABS = [
   { label: "Trip Planning", href: "/trip" },
@@ -40,6 +41,11 @@ export function Nav({ activeAgentCount }: { activeAgentCount: number }) {
         >
           Admin
         </Link>
+        <UserButton
+          appearance={{
+            elements: { avatarBox: { width: 28, height: 28 } },
+          }}
+        />
       </div>
     </nav>
   );

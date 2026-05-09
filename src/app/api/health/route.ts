@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+/* /api/health is intentionally public — see middleware.ts isPublic matcher */
+
 export async function GET() {
   const startedAt = Date.now();
   try {

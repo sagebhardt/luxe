@@ -119,6 +119,60 @@
   background: var(--forest-dim);
 }
 
+/* ════════════════════════
+   AUTH (Clerk pages)
+════════════════════════ */
+.auth-shell {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 64px 24px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(196, 168, 130, 0.18), transparent 55%),
+    radial-gradient(circle at 90% 100%, rgba(45, 64, 56, 0.08), transparent 50%),
+    var(--cream);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 480px;
+  text-align: center;
+  animation: fadeUp 0.6s var(--ease) both;
+}
+
+.auth-heading {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 64px;
+  line-height: 1;
+  color: var(--forest);
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+}
+
+.auth-heading sup {
+  font-family: var(--font-body);
+  font-style: normal;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bark);
+  vertical-align: super;
+  margin-left: 6px;
+  top: -0.3em;
+  position: relative;
+}
+
+.auth-tag {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--charcoal);
+  margin: 0 0 24px;
+}
+
 .pulse {
   width: 7px;
   height: 7px;
