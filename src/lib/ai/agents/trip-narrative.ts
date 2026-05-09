@@ -11,6 +11,7 @@ import {
 } from "@/lib/db/schema";
 import { resolveAgent } from "@/lib/ai/registry";
 import type { TripNarrative } from "@/lib/types/narrative";
+import { findDestinationHero } from "@/lib/data/unsplash";
 
 /**
  * Trip Narrative Agent
@@ -33,6 +34,11 @@ const DaySchema = z.object({
     .string()
     .describe(
       "1–2 sentences of warm, second-person, sensory copy describing the feel of the day. No itemized lists, no facts the data doesn't support.",
+    ),
+  packingNote: z
+    .string()
+    .describe(
+      "1 short sentence: what to bring or wear today specifically. Reference weather/activities when known. Concrete: 'Pack a light layer for the temple grounds — cool stone in the morning.' Not generic: 'Dress comfortably.'",
     ),
 });
 
@@ -122,8 +128,15 @@ export async function generateTripNarrative(
   /* Convert the array form into the keyed map shape we persist. */
   const daySummaries: TripNarrative["daySummaries"] = {};
   for (const d of object.daySummaries) {
-    daySummaries[d.date] = { theme: d.theme, blurb: d.blurb };
+    daySummaries[d.date] = {
+      theme: d.theme,
+      blurb: d.blurb,
+      packingNote: d.packingNote,
+    };
   }
+
+  /* Fetch destination hero image in parallel (no-op if no API key). */
+  const hero = await findDestinationHero(trip.destination);
 
   const narrative: TripNarrative = {
     heroEyebrow: object.heroEyebrow,
@@ -131,6 +144,7 @@ export async function generateTripNarrative(
     daySummaries,
     preTripNotes: object.preTripNotes,
     closing: object.closing,
+    hero: hero ?? null,
   };
 
   await db

@@ -9,6 +9,13 @@ import {
   trips,
   tripShareTokens,
 } from "@/lib/db/schema";
+import {
+  fetchDailyWeather,
+  seasonalForDate,
+  toChip,
+  type WeatherChip,
+} from "@/lib/data/weather";
+import { resolveCoords } from "@/lib/data/city-coords";
 
 export async function findValidToken(token: string) {
   const row = await db.query.tripShareTokens.findFirst({
@@ -40,6 +47,39 @@ export async function getSharedTripDetail(tripId: string) {
       },
     },
   });
+}
+
+export async function getTripWeatherChips(
+  destination: string,
+  startDate: string | null,
+  endDate: string | null,
+): Promise<Record<string, WeatherChip>> {
+  if (!startDate || !endDate) return {};
+  const coords = resolveCoords(destination);
+  const out: Record<string, WeatherChip> = {};
+
+  if (coords) {
+    const forecast = await fetchDailyWeather({
+      lat: coords.lat,
+      lng: coords.lng,
+      startDate,
+      endDate,
+    });
+    for (const d of forecast) out[d.date] = toChip(d);
+  }
+
+  /* Fill any dates not covered by forecast with seasonal averages. */
+  const cursor = new Date(startDate + "T00:00:00");
+  const end = new Date(endDate + "T00:00:00");
+  while (cursor <= end) {
+    const iso = cursor.toISOString().slice(0, 10);
+    if (!out[iso]) {
+      const seasonal = seasonalForDate(destination, iso);
+      if (seasonal) out[iso] = seasonal;
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return out;
 }
 
 /* Type unused but referenced for relations init */

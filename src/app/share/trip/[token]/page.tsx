@@ -1,5 +1,9 @@
 import { notFound } from "next/navigation";
-import { findValidToken, getSharedTripDetail } from "@/lib/queries/share";
+import {
+  findValidToken,
+  getSharedTripDetail,
+  getTripWeatherChips,
+} from "@/lib/queries/share";
 import { touchTokenVisit } from "@/lib/share/tokens";
 import { ShareTripView } from "@/components/share/ShareTripView";
 
@@ -18,5 +22,11 @@ export default async function SharedTripPage({ params }: { params: Params }) {
   /* Best-effort visit tracking; failures are silent. */
   void touchTokenVisit(token).catch(() => {});
 
-  return <ShareTripView trip={trip} token={token} />;
+  const weather = await getTripWeatherChips(
+    trip.destination,
+    trip.startDate,
+    trip.endDate,
+  );
+
+  return <ShareTripView trip={trip} token={token} weather={weather} />;
 }

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { formatDateRange, formatMoney, formatDayLabel } from "@/lib/format";
 import type {
   trips,
@@ -6,7 +7,9 @@ import type {
   agentLogMessages,
 } from "@/lib/db/schema";
 import type { TripNarrative } from "@/lib/types/narrative";
+import type { WeatherChip } from "@/lib/data/weather";
 import { ClientChat } from "./ClientChat";
+import { DayCard } from "./DayCard";
 
 type Trip = typeof trips.$inferSelect & {
   client: typeof clients.$inferSelect;
@@ -23,7 +26,15 @@ type EventMeta = {
   approxCost?: boolean;
 };
 
-export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
+export function ShareTripView({
+  trip,
+  token,
+  weather,
+}: {
+  trip: Trip;
+  token: string;
+  weather: Record<string, WeatherChip>;
+}) {
   const narrative = (trip.clientNarrative ?? null) as TripNarrative | null;
 
   const featured = trip.bookings.filter((b) => {
@@ -51,6 +62,8 @@ export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
     narrative?.heroOpening ??
     `${trip.destination} awaits. We've shaped a journey around what you've told us matters — pace, place, and the small details that turn a trip into a story.`;
 
+  const dayList = [...days.entries()];
+
   return (
     <div className="share-shell">
       <header className="share-nav">
@@ -62,12 +75,45 @@ export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
         </div>
       </header>
 
+      {/* HERO IMAGE (when generated) */}
+      {narrative?.hero ? (
+        <div className="share-cover">
+          <Image
+            src={narrative.hero.imageUrl}
+            alt={trip.destination}
+            fill
+            sizes="100vw"
+            priority
+            className="share-cover-img"
+          />
+          <div className="share-cover-veil" />
+          <div className="share-cover-credit">
+            Photo by{" "}
+            <a
+              href={narrative.hero.authorUrl + "?utm_source=luxe&utm_medium=referral"}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {narrative.hero.authorName}
+            </a>{" "}
+            on{" "}
+            <a
+              href="https://unsplash.com?utm_source=luxe&utm_medium=referral"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Unsplash
+            </a>
+          </div>
+        </div>
+      ) : null}
+
       <main className="share-main">
         {/* HERO */}
         <section className="share-hero">
           <div className="share-eyebrow">{eyebrow}</div>
           <h1 className="share-title">{trip.name}</h1>
-          <div className="share-rule" aria-hidden="true" />
+          <Ornament />
           <p className="share-meta">
             {formatDateRange(trip.startDate, trip.endDate)} &nbsp;·&nbsp;{" "}
             {trip.travelerCount} traveler
@@ -84,9 +130,7 @@ export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
                   </span>
                 </>
               ) : daysUntil === 0 ? (
-                <span className="share-countdown-label">
-                  Departure today
-                </span>
+                <span className="share-countdown-label">Departure today</span>
               ) : (
                 <span className="share-countdown-label">
                   Underway · day {Math.abs(daysUntil) + 1}
@@ -96,7 +140,7 @@ export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
           ) : null}
         </section>
 
-        {/* OPENING NARRATIVE — drop cap, editorial */}
+        {/* OPENING NARRATIVE */}
         <section className="share-opening">
           <p className="share-opening-body">
             <span className="share-dropcap" aria-hidden="true">
@@ -106,7 +150,7 @@ export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
           </p>
         </section>
 
-        <div className="share-divider" aria-hidden="true" />
+        <Ornament size="lg" />
 
         {/* CONFIRMED ANCHORS */}
         <section className="share-section">
@@ -151,64 +195,58 @@ export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
           )}
         </section>
 
-        <div className="share-divider" aria-hidden="true" />
+        <Ornament size="lg" />
 
-        {/* DAY BY DAY — with optional themes */}
+        {/* DAY BY DAY — magazine layout */}
         <section className="share-section">
           <div className="share-section-eyebrow">The rhythm</div>
           <h2 className="share-section-title">Your days unfold</h2>
-          {days.size === 0 ? (
+          {dayList.length === 0 ? (
             <div className="share-empty">
               Day-by-day plan coming soon. Your concierge is mapping out
               timing, transfers, and reservations.
             </div>
           ) : (
-            [...days.entries()].map(([date, items]) => {
-              const { num, dow } = formatDayLabel(date);
-              const summary = narrative?.daySummaries?.[date];
-              return (
-                <div key={date} className="share-day">
-                  <div className="share-day-lbl">
-                    <div className="share-day-num">{num}</div>
-                    <div className="share-day-dow">{dow}</div>
-                  </div>
-                  <div className="share-day-content">
-                    {summary ? (
-                      <>
-                        <div className="share-day-theme">{summary.theme}</div>
-                        <p className="share-day-blurb">{summary.blurb}</p>
-                      </>
-                    ) : null}
-                    <div className="share-day-events">
-                      {items.map((b) => {
-                        const meta = (b.metadata ?? {}) as EventMeta;
-                        return (
-                          <div key={b.id} className="share-evt">
-                            <span className="share-evt-time">{meta.time}</span>
-                            <span className="share-evt-icon">{meta.icon}</span>
-                            <div className="share-evt-body">
-                              <div className="share-evt-name">
-                                {meta.timelineName ?? b.title}
-                              </div>
-                              <div className="share-evt-detail">
-                                {meta.timelineDetail ?? b.detail}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+            <div className="day-list">
+              {dayList.map(([date, items], idx) => {
+                const { num, dow } = formatDayLabel(date);
+                const summary = narrative?.daySummaries?.[date];
+                const w = weather[date] ?? null;
+                return (
+                  <DayCard
+                    key={date}
+                    index={idx}
+                    total={dayList.length}
+                    date={date}
+                    dayNumber={num}
+                    dayOfWeek={dow}
+                    theme={summary?.theme ?? null}
+                    blurb={summary?.blurb ?? null}
+                    packingNote={summary?.packingNote ?? null}
+                    weather={w}
+                    events={items.map((b) => {
+                      const meta = (b.metadata ?? {}) as EventMeta;
+                      return {
+                        id: b.id,
+                        time: meta.time ?? "—",
+                        icon: meta.icon ?? "•",
+                        title: meta.timelineName ?? b.title,
+                        detail: meta.timelineDetail ?? b.detail ?? null,
+                        cost: meta.timelineCost ?? null,
+                        approx: meta.approxCost === true,
+                      };
+                    })}
+                  />
+                );
+              })}
+            </div>
           )}
         </section>
 
-        {/* PRE-TRIP NOTES — only if narrative is generated */}
+        {/* PRE-TRIP NOTES */}
         {narrative?.preTripNotes && narrative.preTripNotes.length > 0 ? (
           <>
-            <div className="share-divider" aria-hidden="true" />
+            <Ornament size="lg" />
             <section className="share-section">
               <div className="share-section-eyebrow">Before you go</div>
               <h2 className="share-section-title">A few quiet notes</h2>
@@ -224,7 +262,7 @@ export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
           </>
         ) : null}
 
-        <div className="share-divider" aria-hidden="true" />
+        <Ornament size="lg" />
 
         {/* CLOSING + CHAT */}
         <section className="share-section share-close">
@@ -246,6 +284,18 @@ export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
         Curated by Luxe — questions outside this thread? Reply to your
         concierge directly.
       </footer>
+    </div>
+  );
+}
+
+function Ornament({ size = "sm" }: { size?: "sm" | "lg" }) {
+  return (
+    <div className={`share-ornament ${size === "lg" ? "lg" : "sm"}`} aria-hidden="true">
+      <svg viewBox="0 0 80 8" width="80" height="8">
+        <line x1="0" y1="4" x2="32" y2="4" stroke="currentColor" strokeWidth="1" />
+        <circle cx="40" cy="4" r="2.5" fill="none" stroke="currentColor" strokeWidth="1" />
+        <line x1="48" y1="4" x2="80" y2="4" stroke="currentColor" strokeWidth="1" />
+      </svg>
     </div>
   );
 }
