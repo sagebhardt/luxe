@@ -219,10 +219,11 @@ async function main() {
       {
         tripId: tokyo.id,
         agent: "itinerary",
-        status: "running",
+        status: "done",
         headline: "Building day-by-day plan",
-        detail: "Crowd calendar scan active.",
+        detail: "Crowd calendar scan complete.",
         startedAt: new Date("2026-05-08T10:18:00Z"),
+        completedAt: new Date("2026-05-08T10:21:00Z"),
       },
       {
         tripId: tokyo.id,

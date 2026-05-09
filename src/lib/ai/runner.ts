@@ -1,7 +1,7 @@
 import "server-only";
 import { generateObject } from "ai";
 import type { z } from "zod";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   agentDecisions,
@@ -61,6 +61,25 @@ export type AgentRunResult<TOutput> = {
 export async function runAgent<TOutput>(
   input: AgentRunInput<TOutput>,
 ): Promise<AgentRunResult<TOutput>> {
+  /* Sweep any stuck-running rows for this trip+agent. Happens when a
+   * previous run timed out without writing a terminal status (e.g.
+   * Vercel function killed mid-call), or when seed data left a row
+   * pinned to 'running' for the demo animation. */
+  await db
+    .update(agentRuns)
+    .set({
+      status: "failed",
+      detail: "superseded by new run",
+      completedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(agentRuns.tripId, input.tripId),
+        eq(agentRuns.agent, input.agent),
+        eq(agentRuns.status, "running"),
+      ),
+    );
+
   const startedAt = new Date();
   const [run] = await db
     .insert(agentRuns)

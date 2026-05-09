@@ -1,6 +1,7 @@
 import type { agentDecisions } from "@/lib/db/schema";
 import { ApprovalAlternatives } from "./ApprovalAlternatives";
 import { ApprovalActions } from "./ApprovalActions";
+import { DecisionDetails } from "./DecisionDetails";
 import { formatMoney } from "@/lib/format";
 
 type Decision = typeof agentDecisions.$inferSelect;
@@ -45,7 +46,15 @@ export function ApprovalBanner({ decision }: { decision: Decision }) {
         {rec.preferenceMatch ? (
           <div className="appr-pref">{rec.preferenceMatch}</div>
         ) : null}
-        {alts.length > 0 ? <ApprovalAlternatives alternatives={alts} /> : null}
+        <div className="appr-toggles">
+          <DecisionDetails
+            agent={decision.agent}
+            recommendation={decision.recommendation as Record<string, unknown>}
+          />
+          {alts.length > 0 ? (
+            <ApprovalAlternatives alternatives={alts} />
+          ) : null}
+        </div>
       </div>
       <ApprovalActions decisionId={decision.id} />
     </div>
