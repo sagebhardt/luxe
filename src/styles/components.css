@@ -5016,11 +5016,22 @@
 
 .pitch-hero {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 64px;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 80px;
   padding: 96px 64px 96px;
-  max-width: 1180px;
+  max-width: 1280px;
   margin: 0 auto;
+  position: relative;
+  align-items: center;
+}
+
+.pitch-hero-left {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.pitch-hero-right {
   position: relative;
 }
 
@@ -5203,6 +5214,13 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
   margin-top: 24px;
+}
+
+@media (max-width: 1100px) {
+  .pitch-hero {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
 }
 
 @media (max-width: 900px) {
@@ -5550,4 +5568,151 @@
   .pitch-cta {
     display: none;
   }
+}
+
+/* -------- Hero Agent Ticker (animated live feed) -------- */
+
+.hero-ticker {
+  background: var(--warm-white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px 28px;
+  position: relative;
+  box-shadow: 0 2px 0 var(--border-lt), 0 30px 60px -30px rgba(45, 64, 56, 0.18);
+  min-height: 460px;
+  overflow: hidden;
+}
+
+.hero-ticker::before {
+  /* Subtle pulsing scan line on top — same vibe as the live agent
+     card on the trip workspace. */
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--sage) 30%,
+    var(--sage) 70%,
+    transparent
+  );
+  opacity: 0.85;
+  animation: hero-ticker-scan 2.4s linear infinite;
+}
+
+@keyframes hero-ticker-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.hero-ticker-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-lt);
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+}
+
+.hero-ticker-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sage);
+  box-shadow: 0 0 0 0 rgba(122, 158, 136, 0.7);
+  animation: hero-ticker-pulse 1.6s ease-out infinite;
+}
+
+@keyframes hero-ticker-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(122, 158, 136, 0.55); }
+  100% { box-shadow: 0 0 0 14px rgba(122, 158, 136, 0); }
+}
+
+.hero-ticker-label {
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  font-weight: 500;
+}
+
+.hero-ticker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hero-ticker-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 12px;
+  align-items: start;
+  animation: hero-ticker-rise 0.6s ease-out;
+  animation-fill-mode: both;
+}
+
+@keyframes hero-ticker-rise {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger fade-out of older rows (the latest is at the top because
+   we reverse() — so further down = older, fade slightly). */
+.hero-ticker-row:nth-child(1) { opacity: 1; }
+.hero-ticker-row:nth-child(2) { opacity: 0.95; }
+.hero-ticker-row:nth-child(3) { opacity: 0.85; }
+.hero-ticker-row:nth-child(4) { opacity: 0.7; }
+.hero-ticker-row:nth-child(5) { opacity: 0.55; }
+.hero-ticker-row:nth-child(6) { opacity: 0.4; }
+.hero-ticker-row:nth-child(7) { opacity: 0.28; }
+.hero-ticker-row:nth-child(n+8) { opacity: 0.18; }
+
+.hero-ticker-content {
+  min-width: 0;
+}
+
+.hero-ticker-agent {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--bark);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.hero-ticker-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--charcoal);
+}
+
+.hero-ticker-time {
+  font-size: 10px;
+  color: var(--stone-lt);
+  letter-spacing: 0.14em;
+  font-feature-settings: "tnum";
+  white-space: nowrap;
+  margin-top: 14px;
+}
+
+.pml-warn {
+  background: rgba(158, 91, 58, 0.16);
+  color: var(--rust);
+}
+
+.pml-ok {
+  background: rgba(45, 64, 56, 0.12);
+  color: var(--forest);
 }

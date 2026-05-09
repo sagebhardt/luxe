@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { HeroAgentTicker } from "@/components/pitch/HeroAgentTicker";
 
 export const metadata: Metadata = {
   title: "Luxe × Odylic — Una plataforma agéntica para travel designers",
@@ -11,10 +12,10 @@ export default function OdylicPitchPage() {
     <main className="pitch">
       {/* -------------------------------------------------- HERO */}
       <section className="pitch-hero">
-        <div className="pitch-hero-mark">
-          Luxe<sup>AI</sup>
-        </div>
-        <div className="pitch-hero-mid">
+        <div className="pitch-hero-left">
+          <div className="pitch-hero-mark">
+            Luxe<sup>AI</sup>
+          </div>
           <div className="pitch-hero-eyebrow">
             Una propuesta para Odylic · Mayo 2026
           </div>
@@ -23,15 +24,18 @@ export default function OdylicPitchPage() {
             administrar un negocio.
           </h1>
           <p className="pitch-hero-sub">
-            Luxe es la plataforma agéntica que trabaja junto a cada Independent
-            Travel Designer. Los agentes investigan, redactan, vigilan y
-            ordenan. La travel designer decide, firma y se conecta con el
-            cliente.
+            Luxe es la plataforma agéntica que trabaja junto a cada
+            Independent Travel Designer. Los agentes investigan, redactan,
+            vigilan y ordenan. La travel designer decide, firma y se conecta
+            con el cliente.
           </p>
+          <div className="pitch-hero-quote">
+            <em>"Diseñamos viajes con intención, criterio y alma."</em>
+            <span className="pitch-hero-cite">— Odylic</span>
+          </div>
         </div>
-        <div className="pitch-hero-quote">
-          <em>"Diseñamos viajes con intención, criterio y alma."</em>
-          <span className="pitch-hero-cite">— Odylic</span>
+        <div className="pitch-hero-right">
+          <HeroAgentTicker />
         </div>
       </section>
 
