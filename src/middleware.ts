@@ -7,6 +7,8 @@ const isPublic = createRouteMatcher([
   /* Token-gated client trip summaries — token validation happens
    * inside the route handler, not at middleware level. */
   "/share/(.*)",
+  /* Vercel Cron triggers — handler validates the CRON_SECRET header. */
+  "/api/cron/(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

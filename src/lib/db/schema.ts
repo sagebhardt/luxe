@@ -126,6 +126,20 @@ export const insightKind = pgEnum("insight_kind", [
 
 export const alertKind = pgEnum("alert_kind", ["warn", "info"]);
 
+export const proactiveAlertKind = pgEnum("proactive_alert_kind", [
+  "anniversary",
+  "trip_imminent",
+  "dormancy",
+  "nps_attention",
+  "high_value_inactive",
+]);
+
+export const proactiveAlertSeverity = pgEnum("proactive_alert_severity", [
+  "info",
+  "warn",
+  "urgent",
+]);
+
 export const providerKind = pgEnum("provider_kind", [
   "google_vertex",
   "google_ai",
@@ -150,6 +164,8 @@ export const clients = pgTable(
     npsScore: integer(),
     lifetimeValueCents: integer().notNull().default(0),
     notes: text(),
+    /** When this person became a client. Drives anniversary alerts. */
+    clientSince: date(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
@@ -275,6 +291,36 @@ export const bookings = pgTable(
   (t) => [
     index("bookings_trip_idx").on(t.tripId),
     index("bookings_status_idx").on(t.status),
+  ],
+);
+
+/* -----------------------------------------------------------------
+ * Proactive alerts — surfaced by the daily monitoring agent
+ * ----------------------------------------------------------------- */
+
+export const proactiveAlerts = pgTable(
+  "proactive_alerts",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    clientId: uuid()
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    kind: proactiveAlertKind().notNull(),
+    severity: proactiveAlertSeverity().notNull().default("info"),
+    title: text().notNull(),
+    body: text().notNull(),
+    suggestedAction: text(),
+    /** Dedupe key like "anniversary:2026-05-14" — prevents the same
+     * alert being inserted twice in a single run or across days. */
+    dedupeKey: text().notNull(),
+    detail: jsonb().$type<Record<string, unknown>>(),
+    triggeredAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    dismissedAt: timestamp({ withTimezone: true }),
+    resolvedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    index("proactive_alerts_client_idx").on(t.clientId, t.triggeredAt),
+    index("proactive_alerts_dedupe_idx").on(t.clientId, t.kind, t.dedupeKey),
   ],
 );
 
@@ -451,6 +497,16 @@ export const aiInsightsRelations = relations(aiInsights, ({ one, many }) => ({
   }),
   drafts: many(outreachDrafts),
 }));
+
+export const proactiveAlertsRelations = relations(
+  proactiveAlerts,
+  ({ one }) => ({
+    client: one(clients, {
+      fields: [proactiveAlerts.clientId],
+      references: [clients.id],
+    }),
+  }),
+);
 
 export const outreachDraftsRelations = relations(
   outreachDrafts,

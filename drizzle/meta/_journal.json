@@ -50,6 +50,13 @@
       "when": 1778330760187,
       "tag": "0006_cute_wallow",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778331050328,
+      "tag": "0007_fancy_argent",
+      "breakpoints": true
     }
   ]
 }

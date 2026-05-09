@@ -7,6 +7,8 @@ import { AIIntelligence } from "@/components/crm/AIIntelligence";
 import { RegenerateInsightsButton } from "@/components/crm/RegenerateInsightsButton";
 import { OutreachDrafts } from "@/components/crm/OutreachDrafts";
 import { listDraftsForClient } from "@/lib/queries/outreach";
+import { listFreshAlerts } from "@/lib/queries/proactive-alerts";
+import { AlertBanner } from "@/components/crm/AlertBanner";
 import { ActivityFeed } from "@/components/crm/ActivityFeed";
 import { QuickNote } from "@/components/crm/QuickNote";
 import {
@@ -47,10 +49,11 @@ export default async function ClientsPage({
   const clientId = sp.id ?? (await getDefaultClientId());
   if (!clientId) notFound();
 
-  const [list, detail, drafts] = await Promise.all([
+  const [list, detail, drafts, alerts] = await Promise.all([
     listClients({ filter, search }),
     getClientDetail(clientId),
     listDraftsForClient(clientId),
+    listFreshAlerts(),
   ]);
   if (!detail) notFound();
 
@@ -65,6 +68,7 @@ export default async function ClientsPage({
         />
 
         <main className="crm-main">
+          <AlertBanner alerts={alerts} />
           <ProfileHeader client={detail.client} />
           <KpiStrip kpis={detail.kpis} />
           <ProfileTabs
