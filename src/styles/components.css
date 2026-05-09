@@ -4994,3 +4994,560 @@
 .reports-pct.est {
   color: var(--bark);
 }
+
+/* =====================================================
+   PITCH PRESENTATION — /pitch/odylic
+   Long-scroll editorial. Match Odylic's deck aesthetic.
+   ===================================================== */
+
+.pitch {
+  background: var(--cream);
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: "Jost", system-ui, sans-serif;
+  font-weight: 300;
+}
+
+.pitch * {
+  box-sizing: border-box;
+}
+
+/* ---------------- HERO ---------------- */
+
+.pitch-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 64px;
+  padding: 96px 64px 96px;
+  max-width: 1180px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.pitch-hero-mark {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 56px;
+  color: var(--forest);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.pitch-hero-mark sup {
+  font-family: "Jost", system-ui, sans-serif;
+  font-style: normal;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  color: var(--bark);
+  margin-left: 6px;
+  vertical-align: super;
+}
+
+.pitch-hero-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--bark);
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.pitch-hero-h1 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 64px;
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0 0 32px;
+  max-width: 16ch;
+}
+
+.pitch-hero-h1 em {
+  font-style: italic;
+  color: var(--forest);
+}
+
+.pitch-hero-sub {
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--charcoal);
+  font-weight: 300;
+  max-width: 60ch;
+  margin: 0;
+}
+
+.pitch-hero-quote {
+  border-top: 1px solid var(--bark);
+  padding-top: 24px;
+  font-size: 14px;
+  color: var(--stone);
+  max-width: 60ch;
+}
+
+.pitch-hero-quote em {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--forest);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.pitch-hero-cite {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+}
+
+/* ---------------- DIVIDERS ---------------- */
+
+.pitch-divider {
+  max-width: 1180px;
+  margin: 0 auto;
+  height: 1px;
+  background: var(--bark);
+  opacity: 0.6;
+}
+
+/* ---------------- SECTIONS ---------------- */
+
+.pitch-section {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 96px 64px;
+}
+
+.pitch-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  margin-bottom: 48px;
+  border-bottom: 1px solid var(--border-lt);
+  padding-bottom: 16px;
+}
+
+.pitch-section-num {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 56px;
+  color: var(--bark);
+  line-height: 1;
+}
+
+.pitch-section-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  font-weight: 500;
+}
+
+.pitch-h2 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 44px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0 0 36px;
+  max-width: 22ch;
+}
+
+.pitch-h2 em {
+  font-style: italic;
+  color: var(--forest);
+}
+
+.pitch-h3 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 22px;
+  color: var(--ink);
+  margin: 0 0 16px;
+}
+
+.pitch-lede {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--charcoal);
+  font-weight: 300;
+  max-width: 64ch;
+  margin: 0 0 32px;
+}
+
+.pitch-body {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--charcoal);
+  font-weight: 300;
+  margin: 0 0 16px;
+}
+
+.pitch-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.pitch-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 24px;
+}
+
+@media (max-width: 900px) {
+  .pitch-grid-2,
+  .pitch-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .pitch-hero {
+    padding: 56px 28px;
+  }
+  .pitch-hero-h1 {
+    font-size: 40px;
+  }
+  .pitch-section {
+    padding: 64px 28px;
+  }
+  .pitch-section-num {
+    font-size: 36px;
+  }
+  .pitch-h2 {
+    font-size: 30px;
+  }
+}
+
+/* ---------------- FEATURE CARDS ---------------- */
+
+.pitch-feature {
+  padding: 32px 0;
+  border-bottom: 1px solid var(--border-lt);
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 48px;
+}
+
+.pitch-feature:last-child {
+  border-bottom: none;
+}
+
+.pitch-feature-title {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 24px;
+  color: var(--ink);
+  line-height: 1.25;
+  margin: 0;
+}
+
+.pitch-feature-body {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--charcoal);
+}
+
+.pitch-feature-body em {
+  color: var(--forest);
+  font-style: italic;
+}
+
+@media (max-width: 900px) {
+  .pitch-feature {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* ---------------- BULLET CARDS ---------------- */
+
+.pitch-bullet {
+  background: var(--warm-white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px 28px;
+}
+
+.pitch-bullet-label {
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--bark);
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.pitch-bullet-body {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--charcoal);
+  margin: 0;
+}
+
+/* ---------------- AGENT LOG MOCK ---------------- */
+
+.pitch-mock {
+  background: var(--warm-white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px 28px;
+  margin: 32px 0;
+}
+
+.pitch-mock-label {
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.pitch-mock-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pitch-mock-log li {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.pml-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.pml-orch {
+  background: rgba(45, 64, 56, 0.12);
+  color: var(--forest);
+}
+
+.pml-sub {
+  background: rgba(122, 158, 136, 0.18);
+  color: var(--sage);
+}
+
+.pml-body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--charcoal);
+}
+
+.pml-body em {
+  color: var(--forest);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.pml-time {
+  font-size: 10px;
+  color: var(--stone-lt);
+  letter-spacing: 0.14em;
+  font-feature-settings: "tnum";
+}
+
+.pml-pending .pml-body {
+  color: var(--bark);
+  font-style: italic;
+}
+
+/* ---------------- ROI ---------------- */
+
+.pitch-roi {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 36px 0;
+  border-top: 1px solid var(--border);
+}
+
+.pitch-roi-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 32px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: baseline;
+}
+
+.pitch-roi-stat {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 40px;
+  color: var(--forest);
+  line-height: 1;
+  font-feature-settings: "tnum";
+}
+
+.pitch-roi-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.pitch-roi-note {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--charcoal);
+  font-weight: 300;
+}
+
+@media (max-width: 900px) {
+  .pitch-roi-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+/* ---------------- QUOTE ---------------- */
+
+.pitch-quote {
+  margin: 48px 0 0;
+  padding: 28px 36px;
+  border-left: 3px solid var(--forest);
+  background: var(--ivory);
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+/* ---------------- LIST ---------------- */
+
+.pitch-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pitch-list li {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--charcoal);
+  position: relative;
+  padding-left: 22px;
+}
+
+.pitch-list li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--bark);
+  font-weight: 500;
+}
+
+/* ---------------- CLOSE ---------------- */
+
+.pitch-close {
+  background: var(--forest);
+  color: var(--ivory);
+  padding: 120px 64px;
+  text-align: center;
+  margin-top: 64px;
+}
+
+.pitch-close-mark {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 80px;
+  color: var(--bark);
+  line-height: 1;
+  margin-bottom: 32px;
+}
+
+.pitch-close-line {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 400;
+  font-size: 36px;
+  line-height: 1.2;
+  color: var(--ivory);
+  margin: 0 auto 12px;
+  max-width: 22ch;
+}
+
+.pitch-close-line em {
+  font-style: italic;
+}
+
+.pitch-close-line-2 {
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: rgba(253, 250, 245, 0.7);
+  font-weight: 300;
+  margin: 0 auto 48px;
+  max-width: 50ch;
+}
+
+.pitch-close-cta {
+  margin-top: 36px;
+}
+
+.pitch-cta {
+  display: inline-block;
+  padding: 16px 36px;
+  background: var(--ivory);
+  color: var(--forest);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.pitch-cta:hover {
+  background: var(--bark);
+  color: var(--ivory);
+  transform: translateY(-1px);
+}
+
+/* ---------------- PRINT ---------------- */
+
+@media print {
+  .pitch {
+    background: white;
+  }
+  .pitch-section,
+  .pitch-hero,
+  .pitch-close {
+    page-break-inside: avoid;
+    page-break-after: always;
+  }
+  .pitch-cta {
+    display: none;
+  }
+}

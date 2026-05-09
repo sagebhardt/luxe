@@ -7,6 +7,9 @@ const isPublic = createRouteMatcher([
   /* Token-gated client trip summaries — token validation happens
    * inside the route handler, not at middleware level. */
   "/share/(.*)",
+  /* Sales pitch presentations — public so the URL can be shared with
+   * prospects without forcing them through sign-in. */
+  "/pitch/(.*)",
   /* Vercel Cron triggers — handler validates the CRON_SECRET header. */
   "/api/cron/(.*)",
 ]);
