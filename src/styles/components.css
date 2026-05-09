@@ -1276,7 +1276,7 @@
   color: var(--stone);
   border: 1px solid var(--border);
   border-radius: 5px;
-  padding: 8px 10px;
+  padding: 8px 12px;
   font-family: var(--font-body);
   font-size: 11px;
   font-weight: 500;
@@ -1284,6 +1284,7 @@
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s;
+  width: 100%;
 }
 
 .new-client-btn:hover {
@@ -1305,6 +1306,7 @@
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s;
+  width: 100%;
 }
 
 .ask-crm-trigger:hover {
@@ -3246,8 +3248,18 @@
   padding: 16px 18px;
   border-bottom: 1px solid var(--border-lt);
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.crm-sb-actions {
+  display: flex;
   gap: 8px;
-  align-items: center;
+  align-items: stretch;
+}
+
+.crm-sb-actions > * {
+  flex: 1;
 }
 
 .search-box {
