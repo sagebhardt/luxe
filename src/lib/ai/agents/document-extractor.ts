@@ -52,11 +52,12 @@ export const ExtractionSchema = z.object({
         confidence: z.enum(["high", "medium", "low"]),
       }),
     )
-    .max(8)
     .describe(
-      "Most useful structured fields. For passports/IDs include name, document number, nationality, expiry. For vouchers include booking reference, provider, dates, total. Skip noise.",
+      "Most useful structured fields, up to ~10. For passports/IDs include name, document number, nationality, expiry. For vouchers include booking reference, provider, dates, total. Skip noise.",
     ),
 });
+
+const MAX_FIELDS_DISPLAYED = 10;
 
 export type ExtractionResult = z.infer<typeof ExtractionSchema>;
 
@@ -135,5 +136,5 @@ export async function extractDocument(opts: {
     temperature: 0,
   });
 
-  return object;
+  return { ...object, fields: object.fields.slice(0, MAX_FIELDS_DISPLAYED) };
 }
