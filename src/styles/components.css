@@ -7102,3 +7102,40 @@
     grid-row: 2;
   }
 }
+
+/* -------- Ledger v2 per-currency breakdown -------- */
+
+.kpi-breakdown {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-lt);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kpi-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--charcoal);
+  font-feature-settings: "tnum";
+}
+
+.kpi-bd-ccy {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+}
+
+.ccy-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+}
+
+.ccy-stack > span {
+  font-feature-settings: "tnum";
+}

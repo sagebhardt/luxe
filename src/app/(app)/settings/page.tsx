@@ -33,6 +33,8 @@ export default async function SettingsPage() {
     year: "numeric",
   });
 
+  const currentMonth = new Date().toISOString().slice(0, 7);
+
   return (
     <main className="reports-main">
       <div className="reports-header">
@@ -44,6 +46,14 @@ export default async function SettingsPage() {
             de clientes — contacta a un admin de Odylic.
           </p>
         </div>
+        <a
+          href={`/api/itd/${viewer.id}/statement.pdf?month=${currentMonth}`}
+          target="_blank"
+          rel="noreferrer"
+          className="invite-btn"
+        >
+          Descargar statement del mes
+        </a>
       </div>
 
       <section className="settings-grid">
