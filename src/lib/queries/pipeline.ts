@@ -1,18 +1,29 @@
 import "server-only";
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { clients, trips } from "@/lib/db/schema";
 import type { PipelineCard, Stage } from "@/lib/pipeline";
+import type { Viewer } from "@/lib/auth";
 
-export async function listPipelineCards(): Promise<PipelineCard[]> {
+export async function listPipelineCards(
+  viewer: Viewer,
+): Promise<PipelineCard[]> {
+  const own = viewer.role === "admin" ? undefined : eq(clients.ownerId, viewer.id);
   const clientRows = await db
     .select()
     .from(clients)
+    .where(own)
     .orderBy(desc(clients.lifetimeValueCents));
 
+  if (clientRows.length === 0) return [];
+
+  /* Scope trips to the visible client set so we don't pull cross-tenant
+   * deal data for the right-rail status. */
+  const visibleIds = clientRows.map((c) => c.id);
   const tripRows = await db
     .select()
     .from(trips)
+    .where(inArray(trips.clientId, visibleIds))
     .orderBy(asc(trips.status), desc(trips.startDate));
 
   const tripsByClient = new Map<string, (typeof tripRows)[number][]>();

@@ -3,11 +3,13 @@ import { ReportingCurrencyForm } from "@/components/reports/ReportingCurrencyFor
 import { db } from "@/lib/db";
 import { appSettings } from "@/lib/db/schema";
 import { formatAmountShort } from "@/lib/format";
+import { getCurrentUserOrThrow } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
-  const summary = await getReportSummary();
+  const viewer = await getCurrentUserOrThrow();
+  const summary = await getReportSummary(viewer);
   const [settings] = await db
     .select({ ccy: appSettings.reportingCurrency })
     .from(appSettings)

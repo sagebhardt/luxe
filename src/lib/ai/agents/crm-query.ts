@@ -23,6 +23,7 @@ import {
   type trips as tripsTable,
 } from "@/lib/db/schema";
 import { resolveAgent } from "@/lib/ai/registry";
+import type { Viewer } from "@/lib/auth";
 
 /**
  * Conversational CRM Query
@@ -99,7 +100,7 @@ If the question is ambiguous, pick the closest reasonable interpretation and exp
 
 export class CrmQueryError extends Error {}
 
-export async function runCrmQuery(question: string) {
+export async function runCrmQuery(question: string, viewer: Viewer) {
   if (!question.trim()) {
     throw new CrmQueryError("Empty question");
   }
@@ -115,7 +116,7 @@ export async function runCrmQuery(question: string) {
   });
 
   validatePlan(plan);
-  const rows = await executePlan(plan);
+  const rows = await executePlan(plan, viewer);
   return { plan, rows };
 }
 
@@ -150,8 +151,17 @@ function validatePlan(plan: QueryPlan) {
 type ClientRow = typeof clientsTable.$inferSelect;
 type TripRow = typeof tripsTable.$inferSelect;
 
-async function executePlan(plan: QueryPlan): Promise<ClientRow[] | TripRow[]> {
+async function executePlan(
+  plan: QueryPlan,
+  viewer: Viewer,
+): Promise<ClientRow[] | TripRow[]> {
   const conditions: SQL[] = [];
+
+  /* Tenancy: ITDs see only their own clients (and trips for those
+   * clients). Admins see everything. The model never sees these
+   * conditions — they're appended server-side and can't be turned off
+   * by the prompt. */
+  const isAdmin = viewer.role === "admin";
 
   for (const f of plan.filters) {
     const col =
@@ -207,13 +217,45 @@ async function executePlan(plan: QueryPlan): Promise<ClientRow[] | TripRow[]> {
 
   if (plan.table === "clients") {
     let q = db.select().from(clients).$dynamic();
-    if (where) q = q.where(where);
+    const scoped = isAdmin
+      ? where
+      : where
+        ? and(where, eq(clients.ownerId, viewer.id))
+        : eq(clients.ownerId, viewer.id);
+    if (scoped) q = q.where(scoped);
     if (order) q = q.orderBy(order);
     return await q.limit(plan.limit);
   } else {
-    let q = db.select().from(trips).$dynamic();
-    if (where) q = q.where(where);
+    /* Trips: join clients to enforce ownership, return trip rows. */
+    let q = db
+      .select({
+        id: trips.id,
+        clientId: trips.clientId,
+        name: trips.name,
+        destination: trips.destination,
+        startDate: trips.startDate,
+        endDate: trips.endDate,
+        travelerCount: trips.travelerCount,
+        budgetCents: trips.budgetCents,
+        committedCents: trips.committedCents,
+        baseCurrency: trips.baseCurrency,
+        status: trips.status,
+        summary: trips.summary,
+        clientNarrative: trips.clientNarrative,
+        clientNarrativeGeneratedAt: trips.clientNarrativeGeneratedAt,
+        createdAt: trips.createdAt,
+        updatedAt: trips.updatedAt,
+      })
+      .from(trips)
+      .innerJoin(clients, eq(clients.id, trips.clientId))
+      .$dynamic();
+    const scoped = isAdmin
+      ? where
+      : where
+        ? and(where, eq(clients.ownerId, viewer.id))
+        : eq(clients.ownerId, viewer.id);
+    if (scoped) q = q.where(scoped);
     if (order) q = q.orderBy(order);
-    return await q.limit(plan.limit);
+    return (await q.limit(plan.limit)) as TripRow[];
   }
 }

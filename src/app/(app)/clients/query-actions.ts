@@ -6,6 +6,7 @@ import {
   type QueryPlan,
 } from "@/lib/ai/agents/crm-query";
 import { ProviderConfigError } from "@/lib/ai/registry";
+import { getCurrentUserOrThrow } from "@/lib/auth";
 
 export type CrmQueryResult =
   | {
@@ -19,7 +20,8 @@ export async function askCrmAction(
   question: string,
 ): Promise<CrmQueryResult> {
   try {
-    const { plan, rows } = await runCrmQuery(question);
+    const viewer = await getCurrentUserOrThrow();
+    const { plan, rows } = await runCrmQuery(question, viewer);
     return {
       ok: true,
       plan,

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { aiInsights, outreachDrafts } from "@/lib/db/schema";
 import { resolveAgent } from "@/lib/ai/registry";
 import { getClientDetail } from "@/lib/queries/clients";
+import type { Viewer } from "@/lib/auth";
 
 /**
  * Outreach Composer
@@ -48,14 +49,20 @@ Hard rules:
 
 export class OutreachAgentError extends Error {}
 
-export async function composeOutreach(opts: {
-  clientId: string;
-  insightId?: string;
-  channel?: "email" | "message";
-  prompt?: string;
-}) {
-  const detail = await getClientDetail(opts.clientId);
-  if (!detail) throw new OutreachAgentError(`Client ${opts.clientId} not found`);
+export async function composeOutreach(
+  opts: {
+    clientId: string;
+    insightId?: string;
+    channel?: "email" | "message";
+    prompt?: string;
+  },
+  viewer: Viewer,
+) {
+  const detail = await getClientDetail(opts.clientId, viewer);
+  if (!detail)
+    throw new OutreachAgentError(
+      `Client ${opts.clientId} not found or not yours`,
+    );
 
   let insight: typeof aiInsights.$inferSelect | null = null;
   if (opts.insightId) {

@@ -9,6 +9,7 @@ import {
   OutreachAgentError,
 } from "@/lib/ai/agents/outreach-composer";
 import { ProviderConfigError } from "@/lib/ai/registry";
+import { getCurrentUserOrThrow } from "@/lib/auth";
 
 type Result =
   | { ok: true; draftId: string }
@@ -20,7 +21,8 @@ export async function composeOutreachAction(opts: {
   channel?: "email" | "message";
 }): Promise<Result> {
   try {
-    const { draft } = await composeOutreach(opts);
+    const viewer = await getCurrentUserOrThrow();
+    const { draft } = await composeOutreach(opts, viewer);
     revalidatePath("/clients");
     return { ok: true, draftId: draft.id };
   } catch (err) {

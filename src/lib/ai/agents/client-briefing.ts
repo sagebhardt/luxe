@@ -9,6 +9,7 @@ import {
 } from "@/lib/db/schema";
 import { resolveAgent } from "@/lib/ai/registry";
 import { getClientDetail } from "@/lib/queries/clients";
+import type { Viewer } from "@/lib/auth";
 
 /**
  * Pre-Call Briefing Generator
@@ -69,9 +70,13 @@ const BRIEFING_SYSTEM_PROMPT = `You are a senior travel concierge preparing a 60
 
 Be specific. Cite actual destinations, dates, dollar amounts, and named events from the data. Skip generic statements ("loves quality"). The operator already knows the client exists — give them the *edge*: what to bring up, what to soft-pedal, what just changed.`;
 
-export async function prepareClientBriefing(clientId: string) {
-  const detail = await getClientDetail(clientId);
-  if (!detail) throw new BriefingAgentError(`Client ${clientId} not found`);
+export async function prepareClientBriefing(
+  clientId: string,
+  viewer: Viewer,
+) {
+  const detail = await getClientDetail(clientId, viewer);
+  if (!detail)
+    throw new BriefingAgentError(`Client ${clientId} not found or not yours`);
 
   /* Pull pending decisions across the client's trips */
   const tripIds = detail.trips.map((t) => t.id);

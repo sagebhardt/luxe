@@ -6,6 +6,7 @@ import {
   type ClientBriefingOutput,
 } from "@/lib/ai/agents/client-briefing";
 import { ProviderConfigError } from "@/lib/ai/registry";
+import { getCurrentUserOrThrow } from "@/lib/auth";
 
 export type PrepareBriefingResult =
   | { ok: true; briefing: ClientBriefingOutput }
@@ -15,7 +16,8 @@ export async function prepareBriefingAction(
   clientId: string,
 ): Promise<PrepareBriefingResult> {
   try {
-    const briefing = await prepareClientBriefing(clientId);
+    const viewer = await getCurrentUserOrThrow();
+    const briefing = await prepareClientBriefing(clientId, viewer);
     return { ok: true, briefing };
   } catch (err) {
     const error =

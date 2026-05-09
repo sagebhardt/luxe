@@ -6,6 +6,7 @@ import {
   InsightsAgentError,
 } from "@/lib/ai/agents/client-insights";
 import { ProviderConfigError } from "@/lib/ai/registry";
+import { getCurrentUserOrThrow } from "@/lib/auth";
 
 export type RegenInsightsResult =
   | { ok: true }
@@ -15,7 +16,8 @@ export async function regenerateInsightsAction(
   clientId: string,
 ): Promise<RegenInsightsResult> {
   try {
-    await regenerateClientInsights(clientId);
+    const viewer = await getCurrentUserOrThrow();
+    await regenerateClientInsights(clientId, viewer);
     revalidatePath("/clients");
     return { ok: true };
   } catch (err) {

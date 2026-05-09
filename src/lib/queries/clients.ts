@@ -7,16 +7,28 @@ import {
   clients,
   trips,
 } from "@/lib/db/schema";
+import type { Viewer } from "@/lib/auth";
 
 const ACTIVE_TRIP_STATUSES = ["active", "pending"] as const;
 
 export type ClientFilter = "all" | "vip" | "active" | "prospect" | "dormant";
 
-export async function listClients(opts: {
-  filter?: ClientFilter;
-  search?: string;
-}) {
+/** Tenancy filter on the clients table. Admins get undefined (no
+ * scoping); ITDs get an `owner_id = viewer.id` predicate. */
+function ownerFilter(viewer: Viewer) {
+  return viewer.role === "admin" ? undefined : eq(clients.ownerId, viewer.id);
+}
+
+export async function listClients(
+  viewer: Viewer,
+  opts: {
+    filter?: ClientFilter;
+    search?: string;
+  },
+) {
   const conditions = [];
+  const own = ownerFilter(viewer);
+  if (own) conditions.push(own);
   if (opts.filter && opts.filter !== "all") {
     conditions.push(eq(clients.tag, opts.filter));
   }
@@ -61,8 +73,11 @@ function subtitleFor(notes: string | null): string {
   return first;
 }
 
-export async function getDefaultClientId(): Promise<string | null> {
+export async function getDefaultClientId(
+  viewer: Viewer,
+): Promise<string | null> {
   const activeCount = sql<number>`count(${trips.id})::int`.as("active_count");
+  const own = ownerFilter(viewer);
   const [row] = await db
     .select({ id: clients.id, activeCount })
     .from(clients)
@@ -73,15 +88,20 @@ export async function getDefaultClientId(): Promise<string | null> {
         inArray(trips.status, [...ACTIVE_TRIP_STATUSES]),
       ),
     )
+    .where(own)
     .groupBy(clients.id)
     .orderBy(desc(activeCount), desc(clients.lifetimeValueCents))
     .limit(1);
   return row?.id ?? null;
 }
 
-export async function getClientDetail(clientId: string) {
+export async function getClientDetail(clientId: string, viewer: Viewer) {
+  const ownConditions =
+    viewer.role === "admin"
+      ? eq(clients.id, clientId)
+      : and(eq(clients.id, clientId), eq(clients.ownerId, viewer.id));
   const client = await db.query.clients.findFirst({
-    where: eq(clients.id, clientId),
+    where: ownConditions,
     with: {
       preferences: true,
       insights: { orderBy: [asc(aiInsights.sortOrder)] },

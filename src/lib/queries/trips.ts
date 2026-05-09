@@ -12,6 +12,14 @@ import {
   trips,
   tripShareTokens,
 } from "@/lib/db/schema";
+import type { Viewer } from "@/lib/auth";
+
+/* Tenancy filter on the clients table. ITDs see only trips for clients
+ * they own; admins see all. Used by the queries below to AND into
+ * their existing predicates. */
+function ownerFilter(viewer: Viewer) {
+  return viewer.role === "admin" ? undefined : eq(clients.ownerId, viewer.id);
+}
 
 export type SidebarTrip = {
   id: string;
@@ -22,13 +30,26 @@ export type SidebarTrip = {
   subtitle: string;
 };
 
-export async function listSidebarTrips(): Promise<{
+export async function listSidebarTrips(viewer: Viewer): Promise<{
   active: SidebarTrip[];
   completed: SidebarTrip[];
 }> {
-  const rows = await db.query.trips.findMany({
-    orderBy: [asc(trips.startDate)],
-  });
+  /* Drizzle's nested relations don't auto-filter by joined tables, so
+   * we hand-roll the join through clients to enforce ownership. */
+  const own = ownerFilter(viewer);
+  const rows = await db
+    .select({
+      id: trips.id,
+      name: trips.name,
+      status: trips.status,
+      startDate: trips.startDate,
+      endDate: trips.endDate,
+      summary: trips.summary,
+    })
+    .from(trips)
+    .innerJoin(clients, eq(clients.id, trips.clientId))
+    .where(own)
+    .orderBy(asc(trips.startDate));
   const fmtSubtitle = (t: (typeof rows)[number]): string => {
     if (!t.startDate || !t.endDate) return t.summary ?? "";
     const start = new Date(t.startDate);
@@ -83,17 +104,40 @@ export async function listSidebarTrips(): Promise<{
   };
 }
 
-export async function getDefaultTripId(): Promise<string | null> {
+export async function getDefaultTripId(
+  viewer: Viewer,
+): Promise<string | null> {
+  const own = ownerFilter(viewer);
+  const conditions = own
+    ? and(eq(trips.status, "active"), own)
+    : eq(trips.status, "active");
   const [row] = await db
     .select({ id: trips.id })
     .from(trips)
-    .where(eq(trips.status, "active"))
+    .innerJoin(clients, eq(clients.id, trips.clientId))
+    .where(conditions)
     .orderBy(asc(trips.startDate))
     .limit(1);
   return row?.id ?? null;
 }
 
-export async function getTripDetail(tripId: string) {
+export async function getTripDetail(tripId: string, viewer: Viewer) {
+  /* First gate: the trip belongs to a client owned by the viewer.
+   * We do this with a join-and-check rather than a relation filter
+   * because Drizzle's `with: { client }` doesn't push the predicate
+   * down — we have to enforce ownership at the outer level. */
+  const ownCheck = await db
+    .select({ id: trips.id })
+    .from(trips)
+    .innerJoin(clients, eq(clients.id, trips.clientId))
+    .where(
+      viewer.role === "admin"
+        ? eq(trips.id, tripId)
+        : and(eq(trips.id, tripId), eq(clients.ownerId, viewer.id)),
+    )
+    .limit(1);
+  if (!ownCheck[0]) return null;
+
   const trip = await db.query.trips.findFirst({
     where: eq(trips.id, tripId),
     with: {

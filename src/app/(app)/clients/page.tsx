@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getCurrentUserOrThrow } from "@/lib/auth";
 import { CrmSidebar } from "@/components/crm/CrmSidebar";
 import { ProfileHeader } from "@/components/crm/ProfileHeader";
 import { KpiStrip } from "@/components/crm/KpiStrip";
@@ -44,20 +45,47 @@ export default async function ClientsPage({
 }: {
   searchParams: SearchParams;
 }) {
+  const viewer = await getCurrentUserOrThrow();
   const sp = await searchParams;
   const filter = asFilter(sp.filter);
   const search = sp.q ?? "";
-  const clientId = sp.id ?? (await getDefaultClientId());
-  if (!clientId) notFound();
+  const clientId = sp.id ?? (await getDefaultClientId(viewer));
+  if (!clientId) {
+    /* No clients in the viewer's book yet — render the empty CRM. */
+    const list = await listClients(viewer, { filter, search });
+    return (
+      <div className="view">
+        <div className="crm-layout">
+          <CrmSidebar
+            clients={list}
+            selectedClientId={null}
+            activeFilter={filter}
+            searchValue={search}
+          />
+          <main className="crm-main">
+            <div className="tab-empty">
+              <p>
+                Aún no hay clientes en tu cartera. Crea un nuevo cliente
+                desde el botón <em>+ New</em>.
+              </p>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   const [list, detail, drafts, alerts, docs] = await Promise.all([
-    listClients({ filter, search }),
-    getClientDetail(clientId),
+    listClients(viewer, { filter, search }),
+    getClientDetail(clientId, viewer),
     listDraftsForClient(clientId),
     listFreshAlerts(),
     listDocumentsForClient(clientId),
   ]);
-  if (!detail) notFound();
+  /* Detail is null if the viewer doesn't own this client. Redirect to
+   * their default client (or empty state) instead of leaking a 404 vs
+   * 403 distinction. */
+  if (!detail) redirect("/clients");
 
   return (
     <div className="view">

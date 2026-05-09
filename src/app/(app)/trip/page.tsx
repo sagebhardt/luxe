@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getCurrentUserOrThrow } from "@/lib/auth";
 import { TripSidebar } from "@/components/trip/TripSidebar";
 import { TripHero } from "@/components/trip/TripHero";
 import { AgentPipeline } from "@/components/trip/AgentPipeline";
@@ -27,13 +28,14 @@ export default async function TripPage({
 }: {
   searchParams: SearchParams;
 }) {
+  const viewer = await getCurrentUserOrThrow();
   const { id: idParam } = await searchParams;
-  const tripId = idParam ?? (await getDefaultTripId());
+  const tripId = idParam ?? (await getDefaultTripId(viewer));
   if (!tripId) notFound();
 
   const [trip, sidebar, budget, shareTokens, financials] = await Promise.all([
-    getTripDetail(tripId),
-    listSidebarTrips(),
+    getTripDetail(tripId, viewer),
+    listSidebarTrips(viewer),
     getTripBudget(tripId),
     listActiveShareTokens(tripId),
     getTripFinancials(tripId),

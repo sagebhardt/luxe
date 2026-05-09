@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { aiInsights } from "@/lib/db/schema";
 import { resolveAgent } from "@/lib/ai/registry";
 import { getClientDetail } from "@/lib/queries/clients";
+import type { Viewer } from "@/lib/auth";
 
 /**
  * Client Insights Generator
@@ -48,10 +49,13 @@ Tone: precise, warm, operator-friendly. Use <strong> for key facts and <em> for 
 
 export class InsightsAgentError extends Error {}
 
-export async function regenerateClientInsights(clientId: string) {
-  const detail = await getClientDetail(clientId);
+export async function regenerateClientInsights(
+  clientId: string,
+  viewer: Viewer,
+) {
+  const detail = await getClientDetail(clientId, viewer);
   if (!detail) {
-    throw new InsightsAgentError(`Client ${clientId} not found`);
+    throw new InsightsAgentError(`Client ${clientId} not found or not yours`);
   }
 
   const resolved = await resolveAgent("client_insights");

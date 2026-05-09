@@ -38,7 +38,7 @@ export function CrmSidebar({
   searchValue,
 }: {
   clients: ClientRow[];
-  selectedClientId: string;
+  selectedClientId: string | null;
   activeFilter: ClientFilter;
   searchValue: string;
 }) {

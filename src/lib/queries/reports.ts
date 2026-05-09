@@ -1,8 +1,9 @@
 import "server-only";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { appSettings, bookings, trips } from "@/lib/db/schema";
+import { appSettings, bookings, clients, trips } from "@/lib/db/schema";
 import { getRate } from "@/lib/fx";
+import type { Viewer } from "@/lib/auth";
 
 /**
  * Aggregate margin reports across all trips. Each booking is converted
@@ -70,12 +71,17 @@ function monthKey(iso: string | null): { key: string; label: string } | null {
   };
 }
 
-export async function getReportSummary(): Promise<ReportSummary> {
+export async function getReportSummary(viewer: Viewer): Promise<ReportSummary> {
   const reportingCurrency = await getReportingCurrency();
 
   /* Pull every booking joined to its trip's destination + start date +
    * base currency. We do the FX math in JS — volumes are tiny (this
-   * is a per-agency rollup). */
+   * is a per-agency rollup). ITDs see only their own bookings;
+   * admins see the whole org. */
+  const conditions = [inArray(bookings.status, ["confirmed", "pending"])];
+  if (viewer.role !== "admin") {
+    conditions.push(eq(clients.ownerId, viewer.id));
+  }
   const rows = await db
     .select({
       tripId: bookings.tripId,
@@ -90,11 +96,8 @@ export async function getReportSummary(): Promise<ReportSummary> {
     })
     .from(bookings)
     .innerJoin(trips, eq(trips.id, bookings.tripId))
-    .where(
-      and(
-        inArray(bookings.status, ["confirmed", "pending"]),
-      ),
-    );
+    .innerJoin(clients, eq(clients.id, trips.clientId))
+    .where(and(...conditions));
 
   /* Cache cross rates so we hit `getRate` once per pair. */
   const rateCache = new Map<string, number>();
