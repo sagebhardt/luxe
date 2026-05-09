@@ -1,5 +1,6 @@
 import { formatMoney } from "@/lib/format";
 import type { WeatherChip } from "@/lib/data/weather";
+import type { EventEnrichment } from "@/lib/types/narrative";
 
 type Event = {
   id: string;
@@ -24,6 +25,7 @@ export function DayCard({
   packingNote,
   weather,
   events,
+  eventDetails,
 }: {
   index: number;
   total: number;
@@ -35,6 +37,7 @@ export function DayCard({
   packingNote: string | null;
   weather: WeatherChip | null;
   events: Event[];
+  eventDetails: Record<string, EventEnrichment>;
 }) {
   const ornament = KIND_ORNAMENTS[index % KIND_ORNAMENTS.length];
   const isFirst = index === 0;
@@ -47,7 +50,9 @@ export function DayCard({
           <div className="day-numeral-glyph" aria-hidden="true">
             {ornament}
           </div>
-          <div className="day-numeral-num">{String(dayNumber).padStart(2, "0")}</div>
+          <div className="day-numeral-num">
+            {String(dayNumber).padStart(2, "0")}
+          </div>
           <div className="day-numeral-dow">{dayOfWeek}</div>
           <div className="day-numeral-step">
             Day {index + 1} of {total}
@@ -91,27 +96,47 @@ export function DayCard({
       ) : null}
 
       <ol className="day-events">
-        {events.map((ev) => (
-          <li key={ev.id} className="day-evt">
-            <span className="day-evt-line" aria-hidden="true" />
-            <div className="day-evt-time">{ev.time}</div>
-            <div className="day-evt-icon" aria-hidden="true">
-              {ev.icon}
-            </div>
-            <div className="day-evt-body">
-              <div className="day-evt-name">{ev.title}</div>
-              {ev.detail ? (
-                <div className="day-evt-detail">{ev.detail}</div>
-              ) : null}
-            </div>
-            {ev.cost != null ? (
-              <div className="day-evt-cost">
-                {ev.approx ? "~" : ""}
-                {formatMoney(ev.cost * 100)}
+        {events.map((ev) => {
+          const enrich = eventDetails[ev.title] ?? null;
+          return (
+            <li key={ev.id} className="day-evt">
+              <span className="day-evt-line" aria-hidden="true" />
+              <div className="day-evt-time">{ev.time}</div>
+              <div className="day-evt-icon" aria-hidden="true">
+                {ev.icon}
               </div>
-            ) : null}
-          </li>
-        ))}
+              <div className="day-evt-body">
+                <div className="day-evt-name">{ev.title}</div>
+                {ev.detail ? (
+                  <div className="day-evt-detail">{ev.detail}</div>
+                ) : null}
+
+                {enrich ? (
+                  <div className="day-evt-enrich">
+                    <p className="day-evt-lede">{enrich.lede}</p>
+                    <p className="day-evt-body-copy">{enrich.body}</p>
+                    {enrich.facts && enrich.facts.length > 0 ? (
+                      <dl className="day-evt-facts">
+                        {enrich.facts.map((f, i) => (
+                          <div key={i} className="day-evt-fact">
+                            <dt>{f.label}</dt>
+                            <dd>{f.value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+              {ev.cost != null ? (
+                <div className="day-evt-cost">
+                  {ev.approx ? "~" : ""}
+                  {formatMoney(ev.cost * 100)}
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
       </ol>
 
       {!isLast ? (
@@ -129,7 +154,6 @@ export function DayCard({
           </svg>
         </div>
       ) : null}
-      {/* Suppress unused var lint */}
       <span className="sr-only">{date}</span>
     </article>
   );

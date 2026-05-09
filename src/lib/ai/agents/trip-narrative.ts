@@ -24,6 +24,36 @@ import { findDestinationHero } from "@/lib/data/unsplash";
  * generators using the same Gemini model.
  */
 
+const EnrichmentSchema = z.object({
+  title: z
+    .string()
+    .describe(
+      "Must match the event title verbatim from the input list — used to join back to the booking.",
+    ),
+  lede: z
+    .string()
+    .describe(
+      "1 sentence teaser. Sensory, specific, non-promotional. e.g. 'Two Michelin stars; chef Yoshihiro Narisawa cooks the seasons of Japan onto the plate.'",
+    ),
+  body: z
+    .string()
+    .describe(
+      "2–3 sentences of editorial context: why this place, what to expect, what makes the moment. Cite real, well-known facts about famous venues; for lesser-known places be careful and use phrases like 'reportedly' / 'tends to'.",
+    ),
+  facts: z
+    .array(
+      z.object({
+        label: z.string().describe("1–2 word label, e.g. Cuisine, Dress, Walk"),
+        value: z.string().describe("Short value, ≤ 4 words"),
+      }),
+    )
+    .min(2)
+    .max(4)
+    .describe(
+      "Short label/value pairs the client can scan. Useful labels: Cuisine, Neighborhood, Dress, Duration, Walk, Style, Vibe, Carrier, Cabin, Seat. Values must be specific and grounded in the trip data.",
+    ),
+});
+
 const DaySchema = z.object({
   theme: z
     .string()
@@ -39,6 +69,11 @@ const DaySchema = z.object({
     .string()
     .describe(
       "1 short sentence: what to bring or wear today specifically. Reference weather/activities when known. Concrete: 'Pack a light layer for the temple grounds — cool stone in the morning.' Not generic: 'Dress comfortably.'",
+    ),
+  enrichments: z
+    .array(EnrichmentSchema)
+    .describe(
+      "Per-event editorial detail. Include one entry for each event listed for this day in the prompt. Order doesn't matter — we match on `title`.",
     ),
 });
 
@@ -128,10 +163,21 @@ export async function generateTripNarrative(
   /* Convert the array form into the keyed map shape we persist. */
   const daySummaries: TripNarrative["daySummaries"] = {};
   for (const d of object.daySummaries) {
+    const eventDetails: NonNullable<
+      TripNarrative["daySummaries"][string]["eventDetails"]
+    > = {};
+    for (const e of d.enrichments ?? []) {
+      eventDetails[e.title] = {
+        lede: e.lede,
+        body: e.body,
+        facts: e.facts,
+      };
+    }
     daySummaries[d.date] = {
       theme: d.theme,
       blurb: d.blurb,
       packingNote: d.packingNote,
+      eventDetails,
     };
   }
 
@@ -179,12 +225,25 @@ function buildPrompt(
     if (b.occursOn) days.add(b.occursOn);
   }
 
-  const bookingsBlock = trip.bookings
-    .map((b) => {
-      const meta = (b.metadata ?? {}) as Record<string, unknown>;
-      const time = meta.time as string | undefined;
-      const icon = meta.icon as string | undefined;
-      return `- ${b.occursOn ?? "?"} ${time ?? ""} ${icon ?? ""} [${b.kind}] ${b.title}${b.detail ? ` — ${b.detail.replace(/\n/g, " ")}` : ""}`;
+  /* Group bookings by day for the prompt. The agent must produce
+   * one enrichment per event (matched by title verbatim) per day. */
+  const byDay = new Map<string, typeof trip.bookings>();
+  for (const b of trip.bookings) {
+    if (!b.occursOn) continue;
+    const list = byDay.get(b.occursOn) ?? [];
+    list.push(b);
+    byDay.set(b.occursOn, list);
+  }
+
+  const bookingsBlock = [...byDay.entries()]
+    .map(([date, items]) => {
+      const lines = items.map((b) => {
+        const meta = (b.metadata ?? {}) as Record<string, unknown>;
+        const time = meta.time as string | undefined;
+        const icon = meta.icon as string | undefined;
+        return `  - title: "${b.title}"  (${b.kind}${time ? `, ${time}` : ""}${icon ? ` ${icon}` : ""})${b.detail ? `  // ${b.detail.replace(/\n/g, " ")}` : ""}`;
+      });
+      return `${date}:\n${lines.join("\n")}`;
     })
     .join("\n");
 
@@ -206,11 +265,11 @@ function buildPrompt(
     `Travelers: ${trip.travelerCount}`,
     `Traveler preferences: ${prefsLine}`,
     "",
-    "Bookings (day-by-day source of truth):",
+    "Bookings, grouped by day (these are the events you must enrich):",
     bookingsBlock || "(none yet)",
     "",
     `Travel days that need a daySummary entry: ${[...days].sort().join(", ") || "(no specific days yet — use the trip range)"}`,
     "",
-    "Generate the narrative as a structured object. Keep daySummaries.date strings exactly matching the dates above. preTripNotes should reflect the actual climate / currency / language at the destination, not generic travel advice.",
+    "Generate the narrative as a structured object. Keep daySummaries.date strings exactly matching the dates above. For each day, the `enrichments` array must contain one entry per event listed under that date in the prompt — copy each event's title verbatim. preTripNotes should reflect the actual climate / currency / language at the destination.",
   ].join("\n");
 }

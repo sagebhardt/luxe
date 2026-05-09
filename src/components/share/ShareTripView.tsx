@@ -224,6 +224,7 @@ export function ShareTripView({
                     blurb={summary?.blurb ?? null}
                     packingNote={summary?.packingNote ?? null}
                     weather={w}
+                    eventDetails={summary?.eventDetails ?? {}}
                     events={items.map((b) => {
                       const meta = (b.metadata ?? {}) as EventMeta;
                       return {
