@@ -3,6 +3,7 @@ import { formatDateRange, formatMoney, pct } from "@/lib/format";
 import type { trips, clients, tripShareTokens } from "@/lib/db/schema";
 import { ShareTripButton } from "./ShareTripButton";
 import { GenerateNarrativeButton } from "./GenerateNarrativeButton";
+import { ProposalDownloadButton } from "./ProposalDownloadButton";
 
 type Trip = typeof trips.$inferSelect;
 type Client = typeof clients.$inferSelect;
@@ -42,7 +43,10 @@ export function TripHero({
             tripId={trip.id}
             generatedAt={trip.clientNarrativeGeneratedAt}
           />
-          <ShareTripButton tripId={trip.id} existingTokens={shareTokens} />
+          <div className="trip-hero-share-row">
+            <ProposalDownloadButton tripId={trip.id} />
+            <ShareTripButton tripId={trip.id} existingTokens={shareTokens} />
+          </div>
         </div>
       </div>
     </div>
