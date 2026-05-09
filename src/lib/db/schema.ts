@@ -182,6 +182,20 @@ export const priceTier = pgEnum("price_tier", [
   "standard",
 ]);
 
+export const ledgerEntryKind = pgEnum("ledger_entry_kind", [
+  "client_invoice",
+  "client_payment",
+  "supplier_payment",
+  "commission_received",
+  "itd_payout",
+]);
+
+export const ledgerStatus = pgEnum("ledger_status", [
+  "pending",
+  "completed",
+  "cancelled",
+]);
+
 /* -----------------------------------------------------------------
  * Users (ITDs + Odylic admins). Bridges Clerk identity into our DB
  * so we can attach ownership, commission tiers, and per-user prefs.
@@ -287,6 +301,47 @@ export const suppliers = pgTable(
     index("suppliers_kind_idx").on(t.kind),
     index("suppliers_city_idx").on(t.city),
     index("suppliers_preferred_idx").on(t.preferred),
+  ],
+);
+
+/* -----------------------------------------------------------------
+ * Ledger entries — actual money movement. Single-table model (not
+ * double-entry); kinds enumerate the five flows the deck describes:
+ *   client_invoice / client_payment   — what the client owes / paid
+ *   supplier_payment                  — what we owe / paid the supplier
+ *   commission_received               — supplier-side commission to us
+ *   itd_payout                        — ITD's share paid out
+ * Rollups are computed on read by summing entries.
+ * ----------------------------------------------------------------- */
+
+export const ledgerEntries = pgTable(
+  "ledger_entries",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    bookingId: uuid().references(() => bookings.id, { onDelete: "set null" }),
+    /** Tie to a trip even when no booking is attached (e.g. monthly
+     * ITD payouts that aggregate across trips). */
+    tripId: uuid().references(() => trips.id, { onDelete: "set null" }),
+    /** ITD this entry concerns — relevant for itd_payout. */
+    itdUserId: uuid().references(() => users.id, { onDelete: "set null" }),
+    kind: ledgerEntryKind().notNull(),
+    amount: numeric({ precision: 14, scale: 2 }).notNull(),
+    currency: text().notNull(),
+    /** Invoice number, bank transfer ref, etc. */
+    reference: text(),
+    status: ledgerStatus().notNull().default("pending"),
+    occurredOn: date().notNull(),
+    notes: text(),
+    recordedByUserId: uuid().references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("ledger_booking_idx").on(t.bookingId),
+    index("ledger_trip_idx").on(t.tripId),
+    index("ledger_itd_idx").on(t.itdUserId),
+    index("ledger_kind_idx").on(t.kind),
   ],
 );
 

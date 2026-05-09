@@ -18,6 +18,7 @@ import {
   listActiveShareTokens,
   listSidebarTrips,
 } from "@/lib/queries/trips";
+import { listLedgerForTrip } from "@/lib/queries/ledger";
 
 export const dynamic = "force-dynamic";
 
@@ -33,14 +34,26 @@ export default async function TripPage({
   const tripId = idParam ?? (await getDefaultTripId(viewer));
   if (!tripId) notFound();
 
-  const [trip, sidebar, budget, shareTokens, financials] = await Promise.all([
-    getTripDetail(tripId, viewer),
-    listSidebarTrips(viewer),
-    getTripBudget(tripId),
-    listActiveShareTokens(tripId),
-    getTripFinancials(tripId),
-  ]);
+  const [trip, sidebar, budget, shareTokens, financials, ledgerRows] =
+    await Promise.all([
+      getTripDetail(tripId, viewer),
+      listSidebarTrips(viewer),
+      getTripBudget(tripId),
+      listActiveShareTokens(tripId),
+      getTripFinancials(tripId),
+      listLedgerForTrip(tripId),
+    ]);
   if (!trip) notFound();
+
+  /* Bucket ledger by bookingId so CommittedDecisions can hand each
+   * card just its own entries. */
+  const ledgerByBooking = new Map<string, typeof ledgerRows>();
+  for (const e of ledgerRows) {
+    if (!e.bookingId) continue;
+    const arr = ledgerByBooking.get(e.bookingId) ?? [];
+    arr.push(e);
+    ledgerByBooking.set(e.bookingId, arr);
+  }
 
   const featuredBookings = trip.bookings.filter(
     (b) => (b.metadata as Record<string, unknown> | null)?.featured === true,
@@ -82,6 +95,7 @@ export default async function TripPage({
           <CommittedDecisions
             bookings={featuredBookings}
             baseCurrency={trip.baseCurrency}
+            ledgerByBooking={ledgerByBooking}
           />
 
           <div className="sec-lbl">Draft Itinerary</div>

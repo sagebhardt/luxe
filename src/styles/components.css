@@ -6947,3 +6947,158 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* -------- Booking ledger (per-card payment timeline) -------- */
+
+.bk-ledger {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-lt);
+  font-size: 11px;
+}
+
+.bk-ledger-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.bk-ledger-lbl {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+}
+
+.bk-ledger-form {
+  background: var(--ivory);
+  border: 1px solid var(--border-lt);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.bk-ledger-grid {
+  display: grid;
+  grid-template-columns: 1fr 100px 80px 110px 1fr 90px;
+  gap: 6px;
+}
+
+.bk-ledger-wide {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+
+.bk-ledger-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.bk-ledger-submit {
+  padding: 6px 14px;
+  font-size: 10px;
+}
+
+.bk-ledger-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bk-ledger-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 100px 90px 1fr 70px;
+  gap: 8px;
+  align-items: baseline;
+  padding: 6px 8px;
+  font-size: 11px;
+  color: var(--charcoal);
+  border-radius: 4px;
+}
+
+.bk-ledger-row:hover {
+  background: var(--ivory);
+}
+
+.bk-ledger-row.cancelled {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.bk-ledger-row.pending {
+  opacity: 0.6;
+}
+
+.bk-ledger-date {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  font-feature-settings: "tnum";
+}
+
+.bk-ledger-kind {
+  color: var(--ink);
+}
+
+.bk-ledger-amount {
+  font-feature-settings: "tnum";
+  text-align: right;
+}
+
+.bk-ledger-status {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.status-pending {
+  color: var(--bark);
+}
+
+.status-completed {
+  color: var(--sage);
+}
+
+.status-cancelled {
+  color: var(--stone-lt);
+}
+
+.bk-ledger-ref {
+  font-size: 10px;
+  color: var(--stone);
+}
+
+.bk-ledger-actions {
+  display: flex;
+  gap: 4px;
+  justify-self: end;
+}
+
+.bk-ledger-actions .link-btn {
+  padding: 0 6px;
+  margin: 0;
+  font-size: 14px;
+}
+
+@media (max-width: 800px) {
+  .bk-ledger-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bk-ledger-row {
+    grid-template-columns: 60px 1fr auto;
+    grid-template-rows: auto auto;
+  }
+  .bk-ledger-status,
+  .bk-ledger-ref,
+  .bk-ledger-actions {
+    grid-row: 2;
+  }
+}

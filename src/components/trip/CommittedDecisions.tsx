@@ -1,7 +1,9 @@
-import type { bookings } from "@/lib/db/schema";
+import type { bookings, ledgerEntries } from "@/lib/db/schema";
 import { BookingFinancials } from "./BookingFinancials";
+import { BookingLedger } from "./BookingLedger";
 
 type Booking = typeof bookings.$inferSelect;
+type LedgerEntry = typeof ledgerEntries.$inferSelect;
 
 const CARD_CLASS: Record<Booking["status"], string> = {
   confirmed: "conf",
@@ -27,15 +29,18 @@ const BADGE_LABEL: Record<Booking["status"], string> = {
 export function CommittedDecisions({
   bookings: rows,
   baseCurrency,
+  ledgerByBooking,
 }: {
   bookings: Booking[];
   baseCurrency: string;
+  ledgerByBooking: Map<string, LedgerEntry[]>;
 }) {
   return (
     <div className="cards-grid">
       {rows.map((b) => {
         const meta = (b.metadata ?? {}) as Record<string, unknown>;
         const subtitle = (meta.subtitle as string | undefined) ?? "";
+        const ledger = ledgerByBooking.get(b.id) ?? [];
         return (
           <div key={b.id} className={`det-card ${CARD_CLASS[b.status]}`}>
             <span className={`badge ${BADGE_CLASS[b.status]}`}>
@@ -54,6 +59,22 @@ export function CommittedDecisions({
               </div>
             ) : null}
             <BookingFinancials booking={b} baseCurrency={baseCurrency} />
+            <BookingLedger
+              bookingId={b.id}
+              entries={ledger.map((e) => ({
+                id: e.id,
+                kind: e.kind,
+                amount: e.amount,
+                currency: e.currency,
+                reference: e.reference,
+                status: e.status,
+                occurredOn: e.occurredOn,
+                notes: e.notes,
+              }))}
+              defaultCurrency={
+                b.sellCurrency ?? b.costCurrency ?? baseCurrency
+              }
+            />
           </div>
         );
       })}
