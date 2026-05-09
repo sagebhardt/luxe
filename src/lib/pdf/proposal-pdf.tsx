@@ -15,35 +15,35 @@ import type { TripNarrative } from "@/lib/types/narrative";
  * One page per: cover, opening, anchors, day-by-day. Style mirrors the
  * editorial share page: Playfair-italic display + Jost body.
  *
- * Fonts: react-pdf only embeds fonts you explicitly register. We
- * register Playfair Display + Jost from Google Fonts so the PDF
- * matches the on-screen aesthetic.
+ * Fonts are bundled in /public/fonts and served from our own origin —
+ * we used to point at Google's CDN URLs but those rotate version
+ * numbers (v15→v20→...) and silently 404 the PDF route. Call
+ * registerProposalFonts(origin) once before rendering.
  */
 
-Font.register({
-  family: "Playfair Display",
-  fonts: [
-    {
-      src: "https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvUDQ.ttf",
-      fontStyle: "italic",
-      fontWeight: 400,
-    },
-  ],
-});
+let fontsRegistered = false;
 
-Font.register({
-  family: "Jost",
-  fonts: [
-    {
-      src: "https://fonts.gstatic.com/s/jost/v15/92zPtBhPNqw79Ij1E865zBUv7myjJQVGPokMmuHL.ttf",
-      fontWeight: 400,
-    },
-    {
-      src: "https://fonts.gstatic.com/s/jost/v15/92zPtBhPNqw79Ij1E865zBUv7mGjJQVGPokMmuHL.ttf",
-      fontWeight: 500,
-    },
-  ],
-});
+export function registerProposalFonts(baseUrl: string) {
+  if (fontsRegistered) return;
+  fontsRegistered = true;
+  Font.register({
+    family: "Playfair Display",
+    fonts: [
+      {
+        src: `${baseUrl}/fonts/PlayfairDisplay-Italic.ttf`,
+        fontStyle: "italic",
+        fontWeight: 400,
+      },
+    ],
+  });
+  Font.register({
+    family: "Jost",
+    fonts: [
+      { src: `${baseUrl}/fonts/Jost-400.ttf`, fontWeight: 400 },
+      { src: `${baseUrl}/fonts/Jost-500.ttf`, fontWeight: 500 },
+    ],
+  });
+}
 
 const COLORS = {
   cream: "#f7f2ea",

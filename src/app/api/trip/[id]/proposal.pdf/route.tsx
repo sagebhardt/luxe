@@ -3,7 +3,7 @@ import { asc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { agentLogMessages, bookings, trips } from "@/lib/db/schema";
-import { ProposalPdf } from "@/lib/pdf/proposal-pdf";
+import { ProposalPdf, registerProposalFonts } from "@/lib/pdf/proposal-pdf";
 import type { TripNarrative } from "@/lib/types/narrative";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +11,13 @@ export const runtime = "nodejs";
 
 type Params = Promise<{ id: string }>;
 
-export async function GET(_req: Request, { params }: { params: Params }) {
+export async function GET(req: Request, { params }: { params: Params }) {
   const { id } = await params;
+  /* Register the bundled fonts using this request's origin. We can't
+   * use a static URL because Vercel deployment URLs are per-deploy and
+   * we want preview deployments to load their own fonts. */
+  const origin = new URL(req.url).origin;
+  registerProposalFonts(origin);
   const trip = await db.query.trips.findFirst({
     where: eq(trips.id, id),
     with: {
