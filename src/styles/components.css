@@ -794,6 +794,26 @@
 /* ════════════════════════
    ASK CRM
 ════════════════════════ */
+.new-client-btn {
+  background: transparent;
+  color: var(--stone);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.new-client-btn:hover {
+  color: var(--forest);
+  border-color: var(--forest-border);
+}
+
 .ask-crm-trigger {
   background: var(--forest);
   color: var(--ivory);
