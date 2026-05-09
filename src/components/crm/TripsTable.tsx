@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { formatDateRange, formatMoney } from "@/lib/format";
-import type { trips, agentRuns } from "@/lib/db/schema";
+import type { trips, agentRuns, TripAgentKind } from "@/lib/db/schema";
+import { TRIP_AGENT_KINDS } from "@/lib/db/schema";
 
 type TripWithAgents = typeof trips.$inferSelect & {
   agentRuns: Pick<typeof agentRuns.$inferSelect, "agent" | "status">[];
 };
 
-const AGENT_PILL: Record<
-  TripWithAgents["agentRuns"][number]["agent"],
-  { icon: string; label: string }
-> = {
+const TRIP_KINDS = new Set<string>(TRIP_AGENT_KINDS);
+
+const AGENT_PILL: Record<TripAgentKind, { icon: string; label: string }> = {
   flight: { icon: "✈", label: "flight" },
   hotel: { icon: "🏨", label: "hotel" },
   itinerary: { icon: "🗾", label: "itinerary" },
@@ -42,14 +42,14 @@ export function TripsTable({ trips }: { trips: TripWithAgents[] }) {
       </thead>
       <tbody>
         {trips.map((t) => {
-          const distinct = new Map<string, string>();
+          const distinct = new Map<TripAgentKind, true>();
           for (const r of t.agentRuns) {
             if (r.status === "waiting" || r.status === "failed") continue;
-            distinct.set(r.agent, r.agent);
+            if (TRIP_KINDS.has(r.agent)) {
+              distinct.set(r.agent as TripAgentKind, true);
+            }
           }
-          const agentList = Array.from(distinct.keys()) as Array<
-            keyof typeof AGENT_PILL
-          >;
+          const agentList = Array.from(distinct.keys());
           const badge = STATUS_BADGE[t.status];
           return (
             <tr key={t.id}>

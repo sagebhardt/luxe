@@ -15,7 +15,16 @@ const ALLOWED_KINDS: ProviderKind[] = [
   "anthropic",
 ];
 
-const ALLOWED_AGENTS = ["flight", "hotel", "itinerary", "dining"] as const;
+const ALLOWED_AGENTS = [
+  "flight",
+  "hotel",
+  "itinerary",
+  "dining",
+  "client_insights",
+  "client_briefing",
+  "outreach_composer",
+  "crm_query",
+] as const;
 
 function parseJsonOrNull(v: string | null): Record<string, unknown> | null {
   if (!v || !v.trim()) return null;

@@ -11,6 +11,10 @@ const AGENT_LABEL: Record<AgentConfig["agentType"], string> = {
   hotel: "Hotel",
   itinerary: "Itinerary",
   dining: "Dining",
+  client_insights: "Client Insights",
+  client_briefing: "Pre-Call Briefing",
+  outreach_composer: "Outreach Composer",
+  crm_query: "CRM Query",
 };
 
 export function AgentConfigsSection({

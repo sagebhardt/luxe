@@ -1,12 +1,10 @@
-import type { agentRuns } from "@/lib/db/schema";
+import type { agentRuns, TripAgentKind } from "@/lib/db/schema";
+import { TRIP_AGENT_KINDS } from "@/lib/db/schema";
 import { AgentRunButton } from "./AgentRunButton";
 
 type AgentRun = typeof agentRuns.$inferSelect;
 
-const META: Record<
-  AgentRun["agent"],
-  { icon: string; label: string }
-> = {
+const META: Record<TripAgentKind, { icon: string; label: string }> = {
   flight: { icon: "✈️", label: "Flight Agent" },
   hotel: { icon: "🏨", label: "Hotel Agent" },
   itinerary: { icon: "🗾", label: "Itinerary Agent" },
@@ -34,6 +32,8 @@ const CARD_CLASS: Record<AgentRun["status"], string> = {
   failed: "wait",
 };
 
+const TRIP_KINDS = new Set<string>(TRIP_AGENT_KINDS);
+
 export function AgentPipeline({
   runs,
   tripId,
@@ -41,13 +41,16 @@ export function AgentPipeline({
   runs: AgentRun[];
   tripId: string;
 }) {
-  // De-duplicate to one card per agent (latest run wins)
-  const byAgent = new Map<AgentRun["agent"], AgentRun>();
-  for (const r of runs) byAgent.set(r.agent, r);
-  const order: AgentRun["agent"][] = ["flight", "hotel", "itinerary", "dining"];
+  // De-duplicate to one card per trip-agent (latest run wins)
+  const byAgent = new Map<TripAgentKind, AgentRun>();
+  for (const r of runs) {
+    if (TRIP_KINDS.has(r.agent)) {
+      byAgent.set(r.agent as TripAgentKind, r);
+    }
+  }
   return (
     <div className="pipeline">
-      {order.map((kind) => {
+      {TRIP_AGENT_KINDS.map((kind) => {
         const r = byAgent.get(kind);
         const status: AgentRun["status"] = r?.status ?? "waiting";
         const headline = r?.headline ?? "";

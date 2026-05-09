@@ -45,7 +45,16 @@ async function main() {
 
   console.log(`→ upserting agent_configs against provider ${provider.slug}...`);
 
-  for (const agent of ["flight", "hotel", "itinerary", "dining"] as const) {
+  for (const agent of [
+    "flight",
+    "hotel",
+    "itinerary",
+    "dining",
+    "client_insights",
+    "client_briefing",
+    "outreach_composer",
+    "crm_query",
+  ] as const) {
     await db
       .insert(agentConfigs)
       .values({

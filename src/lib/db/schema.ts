@@ -33,11 +33,34 @@ export const tripStatus = pgEnum("trip_status", [
 ]);
 
 export const agentType = pgEnum("agent_type", [
+  /* Trip-scoped agents */
   "flight",
   "hotel",
   "itinerary",
   "dining",
+  /* Client/CRM-scoped agents */
+  "client_insights",
+  "client_briefing",
+  "outreach_composer",
+  "crm_query",
 ]);
+
+/** Subset of agent_type values that operate on a trip. Trip components
+ *  type-narrow against this. */
+export type TripAgentKind = "flight" | "hotel" | "itinerary" | "dining";
+
+export const TRIP_AGENT_KINDS: TripAgentKind[] = [
+  "flight",
+  "hotel",
+  "itinerary",
+  "dining",
+];
+
+export type CrmAgentKind =
+  | "client_insights"
+  | "client_briefing"
+  | "outreach_composer"
+  | "crm_query";
 
 export const agentRunStatus = pgEnum("agent_run_status", [
   "waiting",
@@ -254,6 +277,34 @@ export const aiInsights = pgTable(
   (t) => [index("ai_insights_client_idx").on(t.clientId, t.sortOrder)],
 );
 
+export const outreachStatus = pgEnum("outreach_status", [
+  "draft",
+  "sent",
+  "scheduled",
+  "discarded",
+]);
+
+export const outreachDrafts = pgTable(
+  "outreach_drafts",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    clientId: uuid()
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    insightId: uuid().references(() => aiInsights.id, {
+      onDelete: "set null",
+    }),
+    channel: text().notNull().default("email"),
+    subject: text(),
+    body: text().notNull(),
+    tone: text(),
+    status: outreachStatus().notNull().default("draft"),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    sentAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [index("outreach_drafts_client_idx").on(t.clientId, t.createdAt)],
+);
+
 export const tripAlerts = pgTable(
   "trip_alerts",
   {
@@ -357,12 +408,27 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
   insights: many(aiInsights),
 }));
 
-export const aiInsightsRelations = relations(aiInsights, ({ one }) => ({
+export const aiInsightsRelations = relations(aiInsights, ({ one, many }) => ({
   client: one(clients, {
     fields: [aiInsights.clientId],
     references: [clients.id],
   }),
+  drafts: many(outreachDrafts),
 }));
+
+export const outreachDraftsRelations = relations(
+  outreachDrafts,
+  ({ one }) => ({
+    client: one(clients, {
+      fields: [outreachDrafts.clientId],
+      references: [clients.id],
+    }),
+    insight: one(aiInsights, {
+      fields: [outreachDrafts.insightId],
+      references: [aiInsights.id],
+    }),
+  }),
+);
 
 export const tripAlertsRelations = relations(tripAlerts, ({ one }) => ({
   trip: one(trips, { fields: [tripAlerts.tripId], references: [trips.id] }),

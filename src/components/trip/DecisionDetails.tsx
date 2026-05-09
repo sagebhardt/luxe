@@ -39,7 +39,7 @@ export function DecisionDetails({
   agent,
   recommendation,
 }: {
-  agent: "flight" | "hotel" | "itinerary" | "dining";
+  agent: string; // trip-agent kinds in practice; permissive for forward-compat
   recommendation: Record<string, unknown>;
 }) {
   const [open, setOpen] = useState(false);
