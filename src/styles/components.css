@@ -566,6 +566,21 @@
   gap: 8px;
 }
 
+.appr-actions-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.appr-action-err {
+  font-size: 10px;
+  color: var(--rust);
+  max-width: 200px;
+  text-align: right;
+  line-height: 1.4;
+}
+
 /* BUTTONS */
 .btn {
   padding: 9px 18px;

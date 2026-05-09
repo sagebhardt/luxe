@@ -1,5 +1,6 @@
 import type { agentDecisions } from "@/lib/db/schema";
 import { ApprovalAlternatives } from "./ApprovalAlternatives";
+import { ApprovalActions } from "./ApprovalActions";
 import { formatMoney } from "@/lib/format";
 
 type Decision = typeof agentDecisions.$inferSelect;
@@ -46,10 +47,7 @@ export function ApprovalBanner({ decision }: { decision: Decision }) {
         ) : null}
         {alts.length > 0 ? <ApprovalAlternatives alternatives={alts} /> : null}
       </div>
-      <div className="btn-row">
-        <button className="btn btn-forest">Approve &amp; Book</button>
-        <button className="btn btn-outline">Dismiss</button>
-      </div>
+      <ApprovalActions decisionId={decision.id} />
     </div>
   );
 }
