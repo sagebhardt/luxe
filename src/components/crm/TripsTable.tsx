@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { formatDateRange, formatMoney } from "@/lib/format";
 import type { trips, agentRuns } from "@/lib/db/schema";
 
@@ -52,7 +53,9 @@ export function TripsTable({ trips }: { trips: TripWithAgents[] }) {
           const badge = STATUS_BADGE[t.status];
           return (
             <tr key={t.id}>
-              <td className="tbl-dest">{t.name}</td>
+              <td className="tbl-dest">
+                <Link href={`/trip?id=${t.id}`}>{t.name}</Link>
+              </td>
               <td>{formatDateRange(t.startDate, t.endDate)}</td>
               <td>{t.travelerCount}</td>
               <td className="tbl-value">{formatMoney(t.budgetCents)}</td>

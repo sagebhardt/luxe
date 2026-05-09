@@ -52,10 +52,11 @@ export default async function TripPage({
           completedTrips={sidebar.completed}
           selectedTripId={tripId}
           preferences={trip.client.preferences}
+          client={trip.client}
         />
 
         <main className="trip-main">
-          <TripHero trip={trip} />
+          <TripHero trip={trip} client={trip.client} />
           <div className="section-divider" />
 
           <div className="sec-lbl">Agent Pipeline</div>

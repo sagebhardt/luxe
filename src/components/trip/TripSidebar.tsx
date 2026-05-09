@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { SidebarTrip } from "@/lib/queries/trips";
-import type { travelerPreferences } from "@/lib/db/schema";
+import type { travelerPreferences, clients } from "@/lib/db/schema";
 
 type Preferences = typeof travelerPreferences.$inferSelect | null;
+type Client = typeof clients.$inferSelect;
 
 const STATUS_DOT: Record<SidebarTrip["status"], string> = {
   active: "sd-active",
@@ -17,11 +18,13 @@ export function TripSidebar({
   completedTrips,
   selectedTripId,
   preferences,
+  client,
 }: {
   activeTrips: SidebarTrip[];
   completedTrips: SidebarTrip[];
   selectedTripId: string;
   preferences: Preferences;
+  client: Client;
 }) {
   return (
     <aside className="sidebar">
@@ -61,6 +64,18 @@ export function TripSidebar({
 
       <div className="sb-section">
         <div className="sb-label">Traveler Profile</div>
+        <Link
+          href={`/clients?id=${client.id}`}
+          className="sb-client-link"
+        >
+          <span className={`client-av sb-client-av ${client.avatarColor ?? "av-3"}`}>
+            {client.name.charAt(0)}
+          </span>
+          <div>
+            <div className="sb-client-name">{client.name}</div>
+            <div className="sb-client-hint">View profile →</div>
+          </div>
+        </Link>
         <div className="pref-list">
           <PreferenceLines preferences={preferences} />
         </div>
