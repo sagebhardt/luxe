@@ -1,4 +1,5 @@
 import type { aiInsights } from "@/lib/db/schema";
+import { DraftOutreachLink } from "./DraftOutreachLink";
 
 type Insight = typeof aiInsights.$inferSelect;
 
@@ -8,7 +9,13 @@ const LABEL: Record<Insight["kind"], string> = {
   risk_flag: "Risk Flag",
 };
 
-export function AIIntelligence({ insights }: { insights: Insight[] }) {
+export function AIIntelligence({
+  insights,
+  clientId,
+}: {
+  insights: Insight[];
+  clientId: string;
+}) {
   if (insights.length === 0) {
     return (
       <div className="intel-card">
@@ -20,7 +27,10 @@ export function AIIntelligence({ insights }: { insights: Insight[] }) {
     <>
       {insights.map((i) => (
         <div key={i.id} className="intel-card">
-          <div className="intel-label">{LABEL[i.kind]}</div>
+          <div className="intel-head">
+            <div className="intel-label">{LABEL[i.kind]}</div>
+            <DraftOutreachLink clientId={clientId} insightId={i.id} />
+          </div>
           <span dangerouslySetInnerHTML={{ __html: i.body }} />
         </div>
       ))}

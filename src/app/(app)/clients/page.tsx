@@ -6,6 +6,8 @@ import { InnerTabs } from "@/components/crm/InnerTabs";
 import { TripsTable } from "@/components/crm/TripsTable";
 import { AIIntelligence } from "@/components/crm/AIIntelligence";
 import { RegenerateInsightsButton } from "@/components/crm/RegenerateInsightsButton";
+import { OutreachDrafts } from "@/components/crm/OutreachDrafts";
+import { listDraftsForClient } from "@/lib/queries/outreach";
 import { ActivityFeed } from "@/components/crm/ActivityFeed";
 import { QuickNote } from "@/components/crm/QuickNote";
 import {
@@ -48,9 +50,10 @@ export default async function ClientsPage({
   const clientId = sp.id ?? (await getDefaultClientId());
   if (!clientId) notFound();
 
-  const [list, detail] = await Promise.all([
+  const [list, detail, drafts] = await Promise.all([
     listClients({ filter, search }),
     getClientDetail(clientId),
+    listDraftsForClient(clientId),
   ]);
   if (!detail) notFound();
 
@@ -77,7 +80,14 @@ export default async function ClientsPage({
               <div className="crp-lbl">AI Client Intelligence</div>
               <RegenerateInsightsButton clientId={detail.client.id} />
             </div>
-            <AIIntelligence insights={detail.client.insights} />
+            <AIIntelligence
+              insights={detail.client.insights}
+              clientId={detail.client.id}
+            />
+          </div>
+          <div className="crp-sec">
+            <div className="crp-lbl">Outreach Drafts</div>
+            <OutreachDrafts drafts={drafts} clientId={detail.client.id} />
           </div>
           <div className="crp-sec">
             <div className="crp-lbl">Recent Activity</div>
