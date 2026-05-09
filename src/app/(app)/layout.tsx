@@ -10,15 +10,15 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  let activeAgentCount = 4;
+  let activeAgentCount: number | null = null;
   try {
-    const [{ count }] = await db
+    const [row] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(agentRuns)
       .where(eq(agentRuns.status, "running"));
-    if (count > 0) activeAgentCount = count;
+    activeAgentCount = row?.count ?? 0;
   } catch {
-    // DB not reachable yet (build-time, missing schema, etc.) — fall back.
+    // DB unreachable — leave null so the Nav hides the indicator.
   }
 
   return (

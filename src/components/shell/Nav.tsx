@@ -9,7 +9,11 @@ const TABS = [
   { label: "Client CRM", href: "/clients" },
 ];
 
-export function Nav({ activeAgentCount }: { activeAgentCount: number }) {
+export function Nav({
+  activeAgentCount,
+}: {
+  activeAgentCount: number | null;
+}) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname?.startsWith(href);
 
@@ -30,10 +34,12 @@ export function Nav({ activeAgentCount }: { activeAgentCount: number }) {
         ))}
       </div>
       <div className="nav-right">
-        <div className="live-dot">
-          <div className="pulse" />
-          {activeAgentCount} agents active
-        </div>
+        {activeAgentCount && activeAgentCount > 0 ? (
+          <div className="live-dot">
+            <div className="pulse" />
+            {activeAgentCount} agent{activeAgentCount === 1 ? "" : "s"} running
+          </div>
+        ) : null}
         <div className="nav-badge">Tokyo · May 2026</div>
         <Link
           href="/admin/models"
