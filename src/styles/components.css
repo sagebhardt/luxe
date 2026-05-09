@@ -359,6 +359,45 @@
   line-height: 1.6;
 }
 
+.ag-run-row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-lt);
+}
+
+.ag-run-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--stone);
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ag-run-btn:hover:not(:disabled) {
+  color: var(--forest);
+  border-color: var(--forest-border);
+  background: var(--forest-dim);
+}
+
+.ag-run-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ag-run-err {
+  font-size: 9px;
+  color: var(--rust);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
 /* APPROVAL */
 .approval {
   border: 1px solid rgba(196, 168, 130, 0.5);

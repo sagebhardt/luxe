@@ -1,4 +1,5 @@
 import type { agentRuns } from "@/lib/db/schema";
+import { AgentRunButton } from "./AgentRunButton";
 
 type AgentRun = typeof agentRuns.$inferSelect;
 
@@ -33,7 +34,13 @@ const CARD_CLASS: Record<AgentRun["status"], string> = {
   failed: "wait",
 };
 
-export function AgentPipeline({ runs }: { runs: AgentRun[] }) {
+export function AgentPipeline({
+  runs,
+  tripId,
+}: {
+  runs: AgentRun[];
+  tripId: string;
+}) {
   // De-duplicate to one card per agent (latest run wins)
   const byAgent = new Map<AgentRun["agent"], AgentRun>();
   for (const r of runs) byAgent.set(r.agent, r);
@@ -56,6 +63,11 @@ export function AgentPipeline({ runs }: { runs: AgentRun[] }) {
               {headline ? `${headline}. ` : ""}
               {detail}
             </div>
+            <AgentRunButton
+              agent={kind}
+              tripId={tripId}
+              hasRun={!!r && r.status !== "waiting"}
+            />
           </div>
         );
       })}

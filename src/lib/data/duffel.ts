@@ -106,3 +106,85 @@ export async function searchOffers(
   );
   return sorted.slice(0, limit);
 }
+
+/* ---------- Stays (hotel) search ---------- */
+
+export type DuffelStaySearchInput = {
+  check_in_date: string;
+  check_out_date: string;
+  rooms: number;
+  guests: number;
+  location: {
+    radius: number; // km
+    geographic_coordinates: { latitude: number; longitude: number };
+  };
+};
+
+export type DuffelStayAccommodation = {
+  id: string;
+  name: string;
+  description?: string;
+  rating?: number;
+  review_score?: number;
+  chain?: { name?: string };
+  brand?: { name?: string };
+  location?: {
+    address?: { city_name?: string; line_one?: string };
+  };
+  cheapest_rate_total_amount?: string;
+  cheapest_rate_currency?: string;
+  amenities?: { type: string; description?: string }[];
+};
+
+export type DuffelStayResult = {
+  id: string;
+  accommodation: DuffelStayAccommodation;
+  cheapest_rate_total_amount: string;
+  cheapest_rate_currency: string;
+};
+
+type DuffelStaySearchResponse = {
+  data: { results: DuffelStayResult[] };
+};
+
+export async function searchStays(
+  input: DuffelStaySearchInput,
+  options?: { limit?: number },
+): Promise<DuffelStayResult[]> {
+  const token = process.env.DUFFEL_ACCESS_TOKEN;
+  if (!token) {
+    throw new DuffelError(
+      "DUFFEL_ACCESS_TOKEN not set in environment.",
+      500,
+      null,
+    );
+  }
+  const limit = options?.limit ?? 8;
+  const url = `${DUFFEL_BASE}/stays/search`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Duffel-Version": DUFFEL_API_VERSION,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ data: input }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new DuffelError(
+      `Duffel stays search failed: ${res.status}`,
+      res.status,
+      body,
+    );
+  }
+  const json = (await res.json()) as DuffelStaySearchResponse;
+  const sorted = [...json.data.results].sort(
+    (a, b) =>
+      Number(a.cheapest_rate_total_amount) -
+      Number(b.cheapest_rate_total_amount),
+  );
+  return sorted.slice(0, limit);
+}
