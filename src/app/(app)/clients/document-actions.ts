@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { documents, type documentKind } from "@/lib/db/schema";
-import { classifyDocument } from "@/lib/ai/agents/document-classifier";
+import { extractDocument } from "@/lib/ai/agents/document-extractor";
 
 const ALLOWED_KINDS = [
   "passport",
@@ -19,7 +19,7 @@ const ALLOWED_KINDS = [
   "other",
 ] as const;
 
-const MAX_BYTES = 25 * 1024 * 1024; // 25 MB
+const MAX_BYTES = 25 * 1024 * 1024; // 25 MB after client-side compression
 
 export type UploadDocumentResult =
   | { ok: true; id: string }
@@ -30,30 +30,45 @@ export async function uploadDocumentAction(
 ): Promise<UploadDocumentResult> {
   const clientId = String(formData.get("clientId") ?? "").trim();
   const tripId = String(formData.get("tripId") ?? "").trim() || null;
+  const originalSizeRaw = String(formData.get("originalSize") ?? "");
+  const originalSizeBytes = originalSizeRaw
+    ? Number(originalSizeRaw)
+    : null;
   const file = formData.get("file");
   if (!clientId) return { ok: false, error: "clientId required" };
   if (!(file instanceof File))
     return { ok: false, error: "file is required" };
   if (file.size === 0) return { ok: false, error: "file is empty" };
   if (file.size > MAX_BYTES)
-    return { ok: false, error: `Max file size is ${MAX_BYTES / 1024 / 1024} MB` };
+    return {
+      ok: false,
+      error: `Max upload size is ${MAX_BYTES / 1024 / 1024} MB. Try a smaller file.`,
+    };
 
-  /* Read into a Buffer for bytea insertion. */
   const arrayBuffer = await file.arrayBuffer();
   const content = Buffer.from(arrayBuffer);
 
-  /* Classify (best-effort; failures fall back to 'other'). */
+  /* Extract structured fields via Gemini Vision. Best-effort — on
+   * failure we still save the row with kind='other'. */
   let kind: (typeof documentKind.enumValues)[number] = "other";
   let summary: string | null = null;
+  let expiresOn: string | null = null;
+  let extractedFields: NonNullable<
+    typeof documents.$inferInsert.extractedFields
+  > | null = null;
+
   try {
-    const r = await classifyDocument({
+    const r = await extractDocument({
       fileName: file.name,
       mimeType: file.type || null,
+      content,
     });
     kind = r.kind;
     summary = r.summary;
-  } catch {
-    /* swallow — non-blocking */
+    expiresOn = r.expiresOn;
+    extractedFields = r.fields;
+  } catch (err) {
+    console.error("document extraction failed", err);
   }
 
   try {
@@ -65,9 +80,15 @@ export async function uploadDocumentAction(
         fileName: file.name,
         mimeType: file.type || null,
         sizeBytes: file.size,
+        originalSizeBytes:
+          Number.isFinite(originalSizeBytes) && originalSizeBytes
+            ? originalSizeBytes
+            : file.size,
         kind,
         content,
         summary,
+        expiresOn,
+        extractedFields,
       })
       .returning({ id: documents.id });
     revalidatePath("/clients");

@@ -4601,3 +4601,45 @@
   text-align: right;
 }
 
+
+.doc-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+}
+
+.doc-field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--ivory);
+  border: 1px solid var(--border-lt);
+  margin: 0;
+}
+
+.doc-field-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+}
+
+.doc-field-value {
+  font-size: 11px;
+  color: var(--ink);
+}
+
+.doc-field.low {
+  border-style: dashed;
+  border-color: rgba(158, 91, 58, 0.25);
+}
+
+.doc-field.low .doc-field-value {
+  color: var(--charcoal);
+  font-style: italic;
+}
+

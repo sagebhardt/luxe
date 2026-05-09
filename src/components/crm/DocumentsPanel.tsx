@@ -6,6 +6,7 @@ import {
   uploadDocumentAction,
 } from "@/app/(app)/clients/document-actions";
 import type { DocumentRow } from "@/lib/queries/documents";
+import { compressIfImage } from "@/lib/compress-image";
 
 const KIND_LABEL: Record<string, string> = {
   passport: "Passport",
@@ -30,16 +31,30 @@ export function DocumentsPanel({
   const fileRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [stage, setStage] = useState<string | null>(null);
 
   const onFileChosen = (file: File) => {
-    const fd = new FormData();
-    fd.set("clientId", clientId);
-    fd.set("file", file);
     setError(null);
     startTransition(async () => {
-      const r = await uploadDocumentAction(fd);
-      if (!r.ok) setError(r.error);
-      if (fileRef.current) fileRef.current.value = "";
+      try {
+        setStage("Preparing…");
+        const { file: prepared, originalSize } = await compressIfImage(file);
+        if (prepared !== file) {
+          setStage(
+            `Compressed ${(originalSize / 1024 / 1024).toFixed(1)} MB → ${Math.round(prepared.size / 1024)} KB`,
+          );
+        }
+        setStage((s) => (s ? `${s} · Extracting…` : "Extracting…"));
+        const fd = new FormData();
+        fd.set("clientId", clientId);
+        fd.set("file", prepared);
+        fd.set("originalSize", String(originalSize));
+        const r = await uploadDocumentAction(fd);
+        if (!r.ok) setError(r.error);
+      } finally {
+        setStage(null);
+        if (fileRef.current) fileRef.current.value = "";
+      }
     });
   };
 
@@ -59,8 +74,8 @@ export function DocumentsPanel({
         />
         <span className="docs-hint">
           {pending
-            ? "Uploading…"
-            : "PDF / image / docx, up to 25 MB. Auto-classified after upload."}
+            ? (stage ?? "Uploading…")
+            : "PDF / image / docx, up to 25 MB. Photos are compressed and key fields extracted automatically."}
         </span>
         {error ? <span className="docs-err">{error}</span> : null}
       </div>
@@ -97,10 +112,15 @@ function DocRow({ doc }: { doc: DocumentRow }) {
   };
 
   const sizeKb = doc.sizeBytes ? Math.round(doc.sizeBytes / 1024) : null;
+  const origKb =
+    doc.originalSizeBytes && doc.originalSizeBytes > (doc.sizeBytes ?? 0)
+      ? Math.round(doc.originalSizeBytes / 1024)
+      : null;
   const expiresWarn =
     doc.expiresOn &&
     new Date(doc.expiresOn).getTime() < Date.now() + 1000 * 60 * 60 * 24 * 90;
   const downloadUrl = `/api/documents/${doc.id}/download`;
+  const fields = doc.extractedFields ?? [];
 
   return (
     <li className="doc-row">
@@ -116,8 +136,23 @@ function DocRow({ doc }: { doc: DocumentRow }) {
         </a>
         <div className="doc-meta">
           {sizeKb != null ? `${sizeKb} KB` : ""}
+          {origKb ? <> (from {origKb} KB)</> : null}
           {doc.summary ? <> · {doc.summary}</> : null}
         </div>
+        {fields.length > 0 ? (
+          <ul className="doc-fields">
+            {fields.map((f, i) => (
+              <li
+                key={i}
+                className={`doc-field${f.confidence === "low" ? " low" : ""}`}
+                title={f.confidence === "low" ? "Low confidence" : undefined}
+              >
+                <span className="doc-field-label">{f.label}</span>
+                <span className="doc-field-value">{f.value}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {doc.expiresOn ? (
           <div className={`doc-expiry${expiresWarn ? " warn" : ""}`}>
             Expires {doc.expiresOn}

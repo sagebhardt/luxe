@@ -390,6 +390,14 @@ export const documents = pgTable(
     summary: text(),
     /** Detected expiry date — drives expiry warnings. */
     expiresOn: date(),
+    /** Structured fields pulled from the document by the Vision agent.
+     * Shape varies by kind: passports get number/nationality/issuing
+     * country, vouchers get booking ref / provider / total. */
+    extractedFields: jsonb().$type<
+      { label: string; value: string; confidence: "high" | "medium" | "low" }[]
+    >(),
+    /** Original size before client-side compression (display only). */
+    originalSizeBytes: integer(),
     uploadedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

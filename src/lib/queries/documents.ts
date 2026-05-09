@@ -15,9 +15,11 @@ export async function listDocumentsForClient(clientId: string) {
       fileName: documents.fileName,
       mimeType: documents.mimeType,
       sizeBytes: documents.sizeBytes,
+      originalSizeBytes: documents.originalSizeBytes,
       kind: documents.kind,
       summary: documents.summary,
       expiresOn: documents.expiresOn,
+      extractedFields: documents.extractedFields,
       uploadedAt: documents.uploadedAt,
     })
     .from(documents)
