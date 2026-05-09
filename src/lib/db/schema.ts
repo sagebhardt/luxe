@@ -164,6 +164,24 @@ export const auditAction = pgEnum("audit_action", [
   "user_invitation_revoked",
 ]);
 
+export const supplierKind = pgEnum("supplier_kind", [
+  "hotel",
+  "dmc",
+  "restaurant",
+  "transfer",
+  "experience",
+  "operator",
+  "airline",
+  "other",
+]);
+
+export const priceTier = pgEnum("price_tier", [
+  "luxury",
+  "premium",
+  "boutique",
+  "standard",
+]);
+
 /* -----------------------------------------------------------------
  * Users (ITDs + Odylic admins). Bridges Clerk identity into our DB
  * so we can attach ownership, commission tiers, and per-user prefs.
@@ -222,6 +240,55 @@ export const auditLog = pgTable(
  * User invitations — pending Clerk invitations, surfaced on /admin/users
  * so admins can see who's been invited but hasn't signed up yet.
  * ----------------------------------------------------------------- */
+
+/* -----------------------------------------------------------------
+ * Supplier directory — Odylic's curated list of preferred hotels,
+ * DMCs, restaurants, transfers, etc. Org-wide (no owner_id), edited
+ * by admins only, read by ITDs and surfaced into agent prompts.
+ *
+ * v1 is structured-only: filters cover ~90% of agent queries. Vector
+ * embedding on `notes` will come in v2 once the catalog has real
+ * long-form content.
+ * ----------------------------------------------------------------- */
+
+export const suppliers = pgTable(
+  "suppliers",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    name: text().notNull(),
+    kind: supplierKind().notNull(),
+    /** City + country, comma-separated. We index city separately for
+     * fast filters; country gives a coarser bucket. */
+    city: text(),
+    country: text(),
+    region: text(),
+    priceTier: priceTier(),
+    /** Free-form tags for fast intersection: ["pool", "spa", "kids", "kaiseki"]. */
+    amenities: text().array().notNull().default([]),
+    /** Long-form curator notes — the agency's relationship knowledge,
+     * "owner is friends with our founder", access notes, etc. */
+    notes: text(),
+    /** Preferred = on Odylic's curated short list. Surfaces first in
+     * agent prompts and gets a chip in the UI. */
+    preferred: boolean().notNull().default(false),
+    /** Virtuoso member (or equivalent network) — unlocks amenities.
+     * Per the deck: "Acceso a amenidades especiales (ej: Virtuoso)". */
+    virtuoso: boolean().notNull().default(false),
+    /** Default commission rate this supplier pays Odylic, 0..1. */
+    commissionPct: numeric({ precision: 5, scale: 4 }),
+    /** Contact info — text blob, no need to model further. */
+    contact: text(),
+    /** Public URL for the supplier (for the operator's reference). */
+    website: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("suppliers_kind_idx").on(t.kind),
+    index("suppliers_city_idx").on(t.city),
+    index("suppliers_preferred_idx").on(t.preferred),
+  ],
+);
 
 export const userInvitations = pgTable(
   "user_invitations",

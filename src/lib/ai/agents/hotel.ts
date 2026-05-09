@@ -5,6 +5,10 @@ import { db } from "@/lib/db";
 import { trips, clients, travelerPreferences } from "@/lib/db/schema";
 import { findHotelsForCity, type HotelOption } from "@/lib/data/hotels-catalog";
 import { runAgent, type AgentRunResult } from "@/lib/ai/runner";
+import {
+  suggestSuppliersForAgent,
+  type SupplierRow,
+} from "@/lib/queries/suppliers";
 
 /**
  * Hotel Agent
@@ -72,12 +76,21 @@ export async function runHotelAgent(
     ),
   );
 
+  /* Odylic's curated short list of preferred hotels in this destination.
+   * Pushed into the prompt as authoritative context so the agent
+   * surfaces them first when scoring matches. */
+  const preferred = await suggestSuppliersForAgent({
+    kind: "hotel",
+    destination: trip.destination,
+    limit: 5,
+  });
+
   return runAgent<HotelAgentOutput>({
     agent: "hotel",
     tripId,
     headline: `Ranking ${hotels.length} hotels in ${trip.destination}`,
     outputSchema: HotelAgentSchema,
-    buildPrompt: () => buildPrompt(trip, hotels, nights),
+    buildPrompt: () => buildPrompt(trip, hotels, nights, preferred),
     toDecision: (output) => ({
       headline: output.topPick.name,
       rationale: output.topPick.rationale,
@@ -112,6 +125,7 @@ function buildPrompt(
   },
   hotels: HotelOption[],
   nights: number,
+  preferredSuppliers: SupplierRow[],
 ) {
   const prefs = trip.client.preferences;
   const prefsLine =
@@ -139,6 +153,30 @@ function buildPrompt(
     })
     .join("\n\n");
 
+  /* Odylic's preferred suppliers carry agency-level relationship
+   * weight — match catalog hotels to these names when possible and
+   * lean toward them in the rationale. */
+  const preferredBlock = preferredSuppliers.length
+    ? [
+        "",
+        "**Odylic preferred suppliers in this destination** (favor these when they match a catalog property):",
+        preferredSuppliers
+          .map((s) => {
+            const tags = [
+              s.preferred ? "preferred" : null,
+              s.virtuoso ? "Virtuoso" : null,
+              s.priceTier,
+              s.amenities.length ? s.amenities.slice(0, 6).join(", ") : null,
+            ]
+              .filter(Boolean)
+              .join(" · ");
+            const note = s.notes ? ` · ${s.notes}` : "";
+            return `  • ${s.name} (${[s.city, s.country].filter(Boolean).join(", ")}) — ${tags}${note}`;
+          })
+          .join("\n"),
+      ].join("\n")
+    : "";
+
   return [
     `Traveler: ${trip.client.name}`,
     `Preferences: ${prefsLine}`,
@@ -147,11 +185,12 @@ function buildPrompt(
     trip.budgetCents
       ? `Total trip budget: $${(trip.budgetCents / 100).toLocaleString("en-US")}`
       : null,
+    preferredBlock,
     "",
     "Hotel options for this destination:",
     block,
     "",
-    "Score these against the preferences. Boutique/design/ryokan/riad/lodge styles should outweigh resort or commodity properties when the traveler prefers boutique. Return a structured top pick (hotelId, name, rationale, nightlyCents=cents per night, totalCents=cents for the full stay, nightsTotal), up to 3 alternatives (with their nightlyCents in cents), and a one-sentence preferenceMatch summary. Compute cents from the dollar values (multiply by 100). Use hotelIds verbatim from the list — do not invent any.",
+    "Score these against the preferences. Boutique/design/ryokan/riad/lodge styles should outweigh resort or commodity properties when the traveler prefers boutique. If any catalog hotel matches an Odylic preferred supplier, prefer it (mention this in the rationale). Return a structured top pick (hotelId, name, rationale, nightlyCents=cents per night, totalCents=cents for the full stay, nightsTotal), up to 3 alternatives (with their nightlyCents in cents), and a one-sentence preferenceMatch summary. Compute cents from the dollar values (multiply by 100). Use hotelIds verbatim from the list — do not invent any.",
   ]
     .filter(Boolean)
     .join("\n");

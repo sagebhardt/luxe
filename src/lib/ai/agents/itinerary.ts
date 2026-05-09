@@ -9,6 +9,10 @@ import {
   bookings,
 } from "@/lib/db/schema";
 import { runAgent, type AgentRunResult } from "@/lib/ai/runner";
+import {
+  suggestSuppliersForAgent,
+  type SupplierRow,
+} from "@/lib/queries/suppliers";
 
 /**
  * Itinerary Agent
@@ -67,12 +71,21 @@ export async function runItineraryAgent(
     );
   }
 
+  /* Pull preferred experiences/operators/transfers for this destination
+   * — these are the curated activities Odylic has relationships with. */
+  const [experiences, operators, transfers] = await Promise.all([
+    suggestSuppliersForAgent({ kind: "experience", destination: trip.destination, limit: 5 }),
+    suggestSuppliersForAgent({ kind: "operator", destination: trip.destination, limit: 3 }),
+    suggestSuppliersForAgent({ kind: "transfer", destination: trip.destination, limit: 2 }),
+  ]);
+  const preferred = [...experiences, ...operators, ...transfers];
+
   return runAgent<ItineraryAgentOutput>({
     agent: "itinerary",
     tripId,
     headline: `Drafting itinerary for ${trip.destination}`,
     outputSchema: ItineraryAgentSchema,
-    buildPrompt: () => buildPrompt(trip),
+    buildPrompt: () => buildPrompt(trip, preferred),
     toDecision: (output) => ({
       headline: `${output.days.length}-day plan for ${trip.destination}`,
       rationale: output.notes,
@@ -97,6 +110,7 @@ function buildPrompt(
     };
     bookings: (typeof bookings.$inferSelect)[];
   },
+  preferredSuppliers: SupplierRow[],
 ) {
   const prefs = trip.client.preferences;
   const fixed = trip.bookings
@@ -127,6 +141,18 @@ function buildPrompt(
     fixed
       ? `Already-anchored bookings (work the day plan around these):\n${fixed}`
       : "No bookings anchored yet.",
+    preferredSuppliers.length
+      ? "\n**Odylic preferred experiences/operators/transfers** (work these in where they fit the trip's pace and interests):\n" +
+        preferredSuppliers
+          .map((s) => {
+            const tags = [s.kind, s.priceTier, s.amenities.slice(0, 4).join(", ")]
+              .filter(Boolean)
+              .join(" · ");
+            const note = s.notes ? ` · ${s.notes}` : "";
+            return `  • ${s.name} (${[s.city, s.country].filter(Boolean).join(", ")}) — ${tags}${note}`;
+          })
+          .join("\n")
+      : "",
     "",
     "Draft a day-by-day itinerary as a structured object. Each day has events with time (HH:mm or '—'), an emoji icon, a short title, and a 1-line detail. Aim for 2–4 events/day; respect crowd calendars and the traveler's stated pace. Keep it factually grounded in well-known places at the destination — do not invent fictional venues. Provide a short routing-logic note at the end.",
   ]
