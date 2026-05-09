@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 import { CrmSidebar } from "@/components/crm/CrmSidebar";
 import { ProfileHeader } from "@/components/crm/ProfileHeader";
 import { KpiStrip } from "@/components/crm/KpiStrip";
-import { InnerTabs } from "@/components/crm/InnerTabs";
-import { TripsTable } from "@/components/crm/TripsTable";
+import { ProfileTabs } from "@/components/crm/ProfileTabs";
 import { AIIntelligence } from "@/components/crm/AIIntelligence";
 import { RegenerateInsightsButton } from "@/components/crm/RegenerateInsightsButton";
 import { OutreachDrafts } from "@/components/crm/OutreachDrafts";
@@ -34,9 +33,7 @@ const FILTERS: ClientFilter[] = [
 ];
 
 function asFilter(value: string | undefined): ClientFilter {
-  return (
-    FILTERS.find((f) => f === value) ?? ("all" as ClientFilter)
-  );
+  return FILTERS.find((f) => f === value) ?? ("all" as ClientFilter);
 }
 
 export default async function ClientsPage({
@@ -70,8 +67,11 @@ export default async function ClientsPage({
         <main className="crm-main">
           <ProfileHeader client={detail.client} />
           <KpiStrip kpis={detail.kpis} />
-          <InnerTabs />
-          <TripsTable trips={detail.trips} />
+          <ProfileTabs
+            tripsData={detail.trips}
+            preferences={detail.client.preferences}
+            notes={detail.activity}
+          />
         </main>
 
         <aside className="crm-right">
@@ -95,7 +95,10 @@ export default async function ClientsPage({
           </div>
           <div className="crp-sec">
             <div className="crp-lbl">Quick Note</div>
-            <QuickNote clientName={detail.client.name} />
+            <QuickNote
+              clientId={detail.client.id}
+              clientName={detail.client.name}
+            />
           </div>
         </aside>
       </div>

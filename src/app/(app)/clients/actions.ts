@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { clients, trips } from "@/lib/db/schema";
+import { activityLog, clients, trips } from "@/lib/db/schema";
 
 const AVATAR_COLORS = ["av-1", "av-2", "av-3", "av-4", "av-5"] as const;
 const ALLOWED_TAGS = ["vip", "active", "prospect", "dormant"] as const;
@@ -78,6 +78,34 @@ export async function createTripAndGo(formData: FormData): Promise<void> {
 export type CreateClientResult =
   | { ok: true; clientId: string }
   | { ok: false; error: string };
+
+export type SaveNoteResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function saveNoteAction(
+  clientId: string,
+  body: string,
+): Promise<SaveNoteResult> {
+  const text = body.trim();
+  if (!text) return { ok: false, error: "Note cannot be empty" };
+  if (!clientId) return { ok: false, error: "clientId is required" };
+  try {
+    await db.insert(activityLog).values({
+      clientId,
+      type: "note",
+      actor: "operator",
+      summary: text,
+    });
+    revalidatePath("/clients");
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Save failed",
+    };
+  }
+}
 
 export async function createClientAction(
   formData: FormData,
