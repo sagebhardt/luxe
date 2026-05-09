@@ -10,8 +10,8 @@ import type {
   agentRuns,
   travelerPreferences,
   activityLog,
-  documents,
 } from "@/lib/db/schema";
+import type { DocumentRow } from "@/lib/queries/documents";
 
 const TABS = ["Trip History", "Preferences", "Notes & Calls", "Documents"] as const;
 
@@ -25,14 +25,12 @@ export function ProfileTabs({
   preferences,
   notes,
   documents: docs,
-  blobConfigured,
 }: {
   clientId: string;
   tripsData: TripWithAgents[];
   preferences: typeof travelerPreferences.$inferSelect | null;
   notes: (typeof activityLog.$inferSelect)[];
-  documents: (typeof documents.$inferSelect)[];
-  blobConfigured: boolean;
+  documents: DocumentRow[];
 }) {
   const [active, setActive] = useState<(typeof TABS)[number]>("Trip History");
 
@@ -64,11 +62,7 @@ export function ProfileTabs({
       ) : null}
       {active === "Notes & Calls" ? <NotesAndCallsPanel notes={notes} /> : null}
       {active === "Documents" ? (
-        <DocumentsPanel
-          clientId={clientId}
-          documents={docs}
-          blobConfigured={blobConfigured}
-        />
+        <DocumentsPanel clientId={clientId} documents={docs} />
       ) : null}
     </div>
   );

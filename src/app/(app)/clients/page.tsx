@@ -9,10 +9,7 @@ import { OutreachDrafts } from "@/components/crm/OutreachDrafts";
 import { listDraftsForClient } from "@/lib/queries/outreach";
 import { listFreshAlerts } from "@/lib/queries/proactive-alerts";
 import { AlertBanner } from "@/components/crm/AlertBanner";
-import {
-  blobConfigured,
-  listDocumentsForClient,
-} from "@/lib/queries/documents";
+import { listDocumentsForClient } from "@/lib/queries/documents";
 import { ActivityFeed } from "@/components/crm/ActivityFeed";
 import { QuickNote } from "@/components/crm/QuickNote";
 import {
@@ -61,7 +58,6 @@ export default async function ClientsPage({
     listDocumentsForClient(clientId),
   ]);
   if (!detail) notFound();
-  const blobOk = blobConfigured();
 
   return (
     <div className="view">
@@ -83,7 +79,6 @@ export default async function ClientsPage({
             preferences={detail.client.preferences}
             notes={detail.activity}
             documents={docs}
-            blobConfigured={blobOk}
           />
         </main>
 

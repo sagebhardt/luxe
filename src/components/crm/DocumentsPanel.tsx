@@ -5,9 +5,7 @@ import {
   deleteDocumentAction,
   uploadDocumentAction,
 } from "@/app/(app)/clients/document-actions";
-import type { documents } from "@/lib/db/schema";
-
-type Doc = typeof documents.$inferSelect;
+import type { DocumentRow } from "@/lib/queries/documents";
 
 const KIND_LABEL: Record<string, string> = {
   passport: "Passport",
@@ -25,11 +23,9 @@ const KIND_LABEL: Record<string, string> = {
 export function DocumentsPanel({
   clientId,
   documents: docs,
-  blobConfigured,
 }: {
   clientId: string;
-  documents: Doc[];
-  blobConfigured: boolean;
+  documents: DocumentRow[];
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
@@ -46,18 +42,6 @@ export function DocumentsPanel({
       if (fileRef.current) fileRef.current.value = "";
     });
   };
-
-  if (!blobConfigured) {
-    return (
-      <div className="tab-empty">
-        <p>
-          Document uploads require Vercel Blob. Add the Blob integration to
-          your project, then refresh this page to start uploading passports,
-          visas, voucher PDFs, and other artifacts.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -76,7 +60,7 @@ export function DocumentsPanel({
         <span className="docs-hint">
           {pending
             ? "Uploading…"
-            : "PDF / image / docx — auto-classified after upload."}
+            : "PDF / image / docx, up to 25 MB. Auto-classified after upload."}
         </span>
         {error ? <span className="docs-err">{error}</span> : null}
       </div>
@@ -99,7 +83,7 @@ export function DocumentsPanel({
   );
 }
 
-function DocRow({ doc }: { doc: Doc }) {
+function DocRow({ doc }: { doc: DocumentRow }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -114,13 +98,20 @@ function DocRow({ doc }: { doc: Doc }) {
 
   const sizeKb = doc.sizeBytes ? Math.round(doc.sizeBytes / 1024) : null;
   const expiresWarn =
-    doc.expiresOn && new Date(doc.expiresOn).getTime() < Date.now() + 1000 * 60 * 60 * 24 * 90;
+    doc.expiresOn &&
+    new Date(doc.expiresOn).getTime() < Date.now() + 1000 * 60 * 60 * 24 * 90;
+  const downloadUrl = `/api/documents/${doc.id}/download`;
 
   return (
     <li className="doc-row">
       <div className="doc-kind-pill">{KIND_LABEL[doc.kind] ?? doc.kind}</div>
       <div className="doc-body">
-        <a href={doc.blobUrl} target="_blank" rel="noreferrer" className="doc-name">
+        <a
+          href={downloadUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="doc-name"
+        >
           {doc.fileName}
         </a>
         <div className="doc-meta">

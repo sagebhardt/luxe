@@ -10,8 +10,15 @@ import {
   date,
   index,
   boolean,
+  customType,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+
+const bytea = customType<{ data: Buffer; default: false }>({
+  dataType() {
+    return "bytea";
+  },
+});
 
 /* -----------------------------------------------------------------
  * Enums
@@ -375,9 +382,10 @@ export const documents = pgTable(
     mimeType: text(),
     sizeBytes: integer(),
     kind: documentKind().notNull().default("other"),
-    /** Vercel Blob URL — direct download, no presigning required. */
-    blobUrl: text().notNull(),
-    blobPathname: text().notNull(),
+    /** File contents stored directly in Postgres. Cap upload size in
+     * the action layer (currently 25 MB) — Neon handles bytea up to
+     * 1 GB but we shouldn't bloat the row for travel docs. */
+    content: bytea().notNull(),
     /** AI summary of contents (1–2 sentences). Null until classified. */
     summary: text(),
     /** Detected expiry date — drives expiry warnings. */
