@@ -57,6 +57,13 @@
       "when": 1778331050328,
       "tag": "0007_fancy_argent",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778331995134,
+      "tag": "0008_simple_grim_reaper",
+      "breakpoints": true
     }
   ]
 }

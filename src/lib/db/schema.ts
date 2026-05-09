@@ -350,6 +350,46 @@ export const outreachStatus = pgEnum("outreach_status", [
   "discarded",
 ]);
 
+export const documentKind = pgEnum("document_kind", [
+  "passport",
+  "visa",
+  "id",
+  "voucher",
+  "ticket",
+  "insurance",
+  "contract",
+  "receipt",
+  "photo",
+  "other",
+]);
+
+export const documents = pgTable(
+  "documents",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    clientId: uuid()
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    tripId: uuid().references(() => trips.id, { onDelete: "set null" }),
+    fileName: text().notNull(),
+    mimeType: text(),
+    sizeBytes: integer(),
+    kind: documentKind().notNull().default("other"),
+    /** Vercel Blob URL — direct download, no presigning required. */
+    blobUrl: text().notNull(),
+    blobPathname: text().notNull(),
+    /** AI summary of contents (1–2 sentences). Null until classified. */
+    summary: text(),
+    /** Detected expiry date — drives expiry warnings. */
+    expiresOn: date(),
+    uploadedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("documents_client_idx").on(t.clientId, t.uploadedAt),
+    index("documents_trip_idx").on(t.tripId),
+  ],
+);
+
 export const outreachDrafts = pgTable(
   "outreach_drafts",
   {
@@ -521,6 +561,17 @@ export const outreachDraftsRelations = relations(
     }),
   }),
 );
+
+export const documentsRelations = relations(documents, ({ one }) => ({
+  client: one(clients, {
+    fields: [documents.clientId],
+    references: [clients.id],
+  }),
+  trip: one(trips, {
+    fields: [documents.tripId],
+    references: [trips.id],
+  }),
+}));
 
 export const tripAlertsRelations = relations(tripAlerts, ({ one }) => ({
   trip: one(trips, { fields: [tripAlerts.tripId], references: [trips.id] }),

@@ -9,6 +9,10 @@ import { OutreachDrafts } from "@/components/crm/OutreachDrafts";
 import { listDraftsForClient } from "@/lib/queries/outreach";
 import { listFreshAlerts } from "@/lib/queries/proactive-alerts";
 import { AlertBanner } from "@/components/crm/AlertBanner";
+import {
+  blobConfigured,
+  listDocumentsForClient,
+} from "@/lib/queries/documents";
 import { ActivityFeed } from "@/components/crm/ActivityFeed";
 import { QuickNote } from "@/components/crm/QuickNote";
 import {
@@ -49,13 +53,15 @@ export default async function ClientsPage({
   const clientId = sp.id ?? (await getDefaultClientId());
   if (!clientId) notFound();
 
-  const [list, detail, drafts, alerts] = await Promise.all([
+  const [list, detail, drafts, alerts, docs] = await Promise.all([
     listClients({ filter, search }),
     getClientDetail(clientId),
     listDraftsForClient(clientId),
     listFreshAlerts(),
+    listDocumentsForClient(clientId),
   ]);
   if (!detail) notFound();
+  const blobOk = blobConfigured();
 
   return (
     <div className="view">
@@ -72,9 +78,12 @@ export default async function ClientsPage({
           <ProfileHeader client={detail.client} />
           <KpiStrip kpis={detail.kpis} />
           <ProfileTabs
+            clientId={detail.client.id}
             tripsData={detail.trips}
             preferences={detail.client.preferences}
             notes={detail.activity}
+            documents={docs}
+            blobConfigured={blobOk}
           />
         </main>
 
