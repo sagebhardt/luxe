@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { prepareBriefingAction } from "@/app/(app)/clients/briefing-actions";
 import type { ClientBriefingOutput } from "@/lib/ai/agents/client-briefing";
+import { Modal } from "@/components/shared/Modal";
 
 const URGENCY_CLASS: Record<string, string> = {
   high: "urg-high",
@@ -38,16 +39,13 @@ export function BriefingButton({
       <button type="button" className="btn btn-outline" onClick={run}>
         Prepare briefing
       </button>
-      {open ? (
-        <div
-          className="modal-backdrop"
-          role="presentation"
-          onClick={() => !pending && setOpen(false)}
-        >
-          <div
-            className="modal-card briefing-card"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={open}
+        ariaLabel="Client briefing"
+        className="briefing-card"
+        onClose={() => !pending && setOpen(false)}
+      >
+        <>
             <div className="modal-head">
               <h2 className="modal-title">Briefing — {clientName}</h2>
               <button
@@ -143,9 +141,8 @@ export function BriefingButton({
                 </button>
               ) : null}
             </div>
-          </div>
-        </div>
-      ) : null}
+        </>
+      </Modal>
     </>
   );
 }

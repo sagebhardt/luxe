@@ -7,6 +7,7 @@ import {
   proposeTripAction,
 } from "@/app/(app)/clients/actions";
 import type { TripBuilderOutput } from "@/lib/ai/agents/trip-builder";
+import { Modal } from "@/components/shared/Modal";
 
 const SUGGESTIONS = [
   "Tokyo for 8 nights starting Oct 12, business class, ~$12k",
@@ -66,119 +67,113 @@ export function NewTripButton({ clientId }: { clientId: string }) {
         New Trip
       </button>
 
-      {open ? (
-        <div
-          className="modal-backdrop"
-          role="presentation"
-          onClick={() => !pending && setOpen(false)}
-        >
-          <div
-            className="modal-card builder-card"
-            onClick={(e) => e.stopPropagation()}
+      <Modal
+        open={open}
+        ariaLabel="New trip"
+        className="builder-card"
+        onClose={() => !pending && setOpen(false)}
+      >
+        <div className="modal-head">
+          <h2 className="modal-title">New trip</h2>
+          <button
+            type="button"
+            className="modal-close"
+            onClick={() => !pending && setOpen(false)}
+            aria-label="Close"
           >
-            <div className="modal-head">
-              <h2 className="modal-title">New trip</h2>
+            ×
+          </button>
+        </div>
+
+        <div className="modal-body builder-body">
+          {!proposal ? (
+            <>
+              <label className="builder-label">
+                Describe the trip in your own words
+              </label>
+              <textarea
+                autoFocus
+                rows={4}
+                className="builder-input"
+                placeholder="e.g. From May 22 to June 2, the client wants LA for 3 days then Arizona"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                disabled={pending}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === "Enter" &&
+                    (e.metaKey || e.ctrlKey) &&
+                    prompt.trim() &&
+                    !pending
+                  ) {
+                    e.preventDefault();
+                    propose();
+                  }
+                }}
+              />
+              <div className="builder-suggest">
+                <span>Try:</span>
+                {SUGGESTIONS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className="builder-suggest-chip"
+                    onClick={() => setPrompt(s)}
+                    disabled={pending}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <ProposalView proposal={proposal} />
+          )}
+        </div>
+
+        <div className="modal-actions">
+          {proposal ? (
+            <>
               <button
                 type="button"
-                className="modal-close"
-                onClick={() => !pending && setOpen(false)}
-                aria-label="Close"
+                className="btn btn-outline"
+                onClick={() => setProposal(null)}
+                disabled={pending}
               >
-                ×
+                Refine prompt
               </button>
-            </div>
-
-            <div className="modal-body builder-body">
-              {!proposal ? (
-                <>
-                  <label className="builder-label">
-                    Describe the trip in your own words
-                  </label>
-                  <textarea
-                    autoFocus
-                    rows={4}
-                    className="builder-input"
-                    placeholder="e.g. From May 22 to June 2, the client wants LA for 3 days then Arizona"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    disabled={pending}
-                    onKeyDown={(e) => {
-                      if (
-                        e.key === "Enter" &&
-                        (e.metaKey || e.ctrlKey) &&
-                        prompt.trim() &&
-                        !pending
-                      ) {
-                        e.preventDefault();
-                        propose();
-                      }
-                    }}
-                  />
-                  <div className="builder-suggest">
-                    <span>Try:</span>
-                    {SUGGESTIONS.map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        className="builder-suggest-chip"
-                        onClick={() => setPrompt(s)}
-                        disabled={pending}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <ProposalView proposal={proposal} />
-              )}
-            </div>
-
-            <div className="modal-actions">
-              {proposal ? (
-                <>
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={() => setProposal(null)}
-                    disabled={pending}
-                  >
-                    Refine prompt
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-forest"
-                    onClick={create}
-                    disabled={pending}
-                  >
-                    {pending ? "Creating…" : "Create & open"}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={() => !pending && setOpen(false)}
-                    disabled={pending}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-forest"
-                    onClick={propose}
-                    disabled={pending || !prompt.trim()}
-                  >
-                    {pending ? "Composing…" : "Compose trip"}
-                  </button>
-                </>
-              )}
-              {error ? <span className="modal-err">{error}</span> : null}
-            </div>
-          </div>
+              <button
+                type="button"
+                className="btn btn-forest"
+                onClick={create}
+                disabled={pending}
+              >
+                {pending ? "Creating…" : "Create & open"}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => !pending && setOpen(false)}
+                disabled={pending}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-forest"
+                onClick={propose}
+                disabled={pending || !prompt.trim()}
+              >
+                {pending ? "Composing…" : "Compose trip"}
+              </button>
+            </>
+          )}
+          {error ? <span className="modal-err">{error}</span> : null}
         </div>
-      ) : null}
+      </Modal>
     </>
   );
 }

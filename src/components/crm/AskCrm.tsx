@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { askCrmAction, type CrmQueryResult } from "@/app/(app)/clients/query-actions";
 import { formatMoneyShort } from "@/lib/format";
+import { Modal } from "@/components/shared/Modal";
 
 export function AskCrm() {
   const [open, setOpen] = useState(false);
@@ -26,73 +27,67 @@ export function AskCrm() {
         Ask CRM
       </button>
 
-      {open ? (
-        <div
-          className="modal-backdrop"
-          role="presentation"
-          onClick={() => !pending && setOpen(false)}
-        >
-          <div
-            className="modal-card ask-crm-card"
-            onClick={(e) => e.stopPropagation()}
+      <Modal
+        open={open}
+        ariaLabel="Ask CRM"
+        className="ask-crm-card"
+        onClose={() => !pending && setOpen(false)}
+      >
+        <div className="modal-head">
+          <h2 className="modal-title">Ask CRM</h2>
+          <button
+            type="button"
+            className="modal-close"
+            onClick={() => !pending && setOpen(false)}
           >
-            <div className="modal-head">
-              <h2 className="modal-title">Ask CRM</h2>
-              <button
-                type="button"
-                className="modal-close"
-                onClick={() => !pending && setOpen(false)}
-              >
-                ×
-              </button>
-            </div>
-            <form onSubmit={submit} className="ask-form">
-              <input
-                autoFocus
-                className="ask-input"
-                placeholder="e.g. show me dormant clients with NPS over 80"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                disabled={pending}
-              />
-              <button
-                type="submit"
-                className="btn btn-forest"
-                disabled={pending || !question.trim()}
-              >
-                {pending ? "Querying…" : "Ask"}
-              </button>
-            </form>
-            <div className="ask-suggest">
-              <span>Try:</span>
-              {[
-                "VIP clients with NPS over 90",
-                "active trips to Japan",
-                "clients with lifetime value over $40,000",
-                "trips with budget under $10,000",
-              ].map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className="ask-suggest-chip"
-                  onClick={() => setQuestion(s)}
-                  disabled={pending}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-
-            <div className="ask-results">
-              {result && result.ok ? (
-                <ResultsView result={result} />
-              ) : result && !result.ok ? (
-                <div className="ask-err">{result.error}</div>
-              ) : null}
-            </div>
-          </div>
+            ×
+          </button>
         </div>
-      ) : null}
+        <form onSubmit={submit} className="ask-form">
+          <input
+            autoFocus
+            className="ask-input"
+            placeholder="e.g. show me dormant clients with NPS over 80"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            disabled={pending}
+          />
+          <button
+            type="submit"
+            className="btn btn-forest"
+            disabled={pending || !question.trim()}
+          >
+            {pending ? "Querying…" : "Ask"}
+          </button>
+        </form>
+        <div className="ask-suggest">
+          <span>Try:</span>
+          {[
+            "VIP clients with NPS over 90",
+            "active trips to Japan",
+            "clients with lifetime value over $40,000",
+            "trips with budget under $10,000",
+          ].map((s) => (
+            <button
+              key={s}
+              type="button"
+              className="ask-suggest-chip"
+              onClick={() => setQuestion(s)}
+              disabled={pending}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+        <div className="ask-results">
+          {result && result.ok ? (
+            <ResultsView result={result} />
+          ) : result && !result.ok ? (
+            <div className="ask-err">{result.error}</div>
+          ) : null}
+        </div>
+      </Modal>
     </>
   );
 }
