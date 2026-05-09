@@ -1082,19 +1082,19 @@
 /* ════════════════════════
    PUBLIC SHARED TRIP VIEW
 ════════════════════════ */
+/* Public share page establishes its own scroll context so it can grow
+ * past 100vh regardless of the global body { overflow: hidden } that
+ * the operator views need. position: fixed + overflow-y: auto creates
+ * a fresh scroll container without :has() browser-support concerns. */
 .share-shell {
-  min-height: 100dvh;
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 15% 0%, rgba(196, 168, 130, 0.12), transparent 55%),
     radial-gradient(circle at 95% 100%, rgba(45, 64, 56, 0.06), transparent 50%),
     var(--cream);
-  height: auto;
-  overflow: visible;
-}
-
-body:has(.share-shell) {
-  height: auto;
-  overflow: auto;
 }
 
 .share-nav {
