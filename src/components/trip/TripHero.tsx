@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { formatDateRange, formatMoney, pct } from "@/lib/format";
+import {
+  formatAmountShort,
+  formatDateRange,
+  formatMoney,
+  pct,
+} from "@/lib/format";
 import type { trips, clients, tripShareTokens } from "@/lib/db/schema";
 import { ShareTripButton } from "./ShareTripButton";
 import { GenerateNarrativeButton } from "./GenerateNarrativeButton";
@@ -9,14 +14,25 @@ type Trip = typeof trips.$inferSelect;
 type Client = typeof clients.$inferSelect;
 type Token = typeof tripShareTokens.$inferSelect;
 
+type Financials = {
+  baseCurrency: string;
+  sellInBase: number;
+  costInBase: number;
+  marginPct: number | null;
+  unlockedCount: number;
+  hasAnyData: boolean;
+};
+
 export function TripHero({
   trip,
   client,
   shareTokens,
+  financials,
 }: {
   trip: Trip;
   client: Client;
   shareTokens: Token[];
+  financials: Financials;
 }) {
   const committedPct = pct(trip.committedCents, trip.budgetCents ?? 0);
   return (
@@ -37,6 +53,39 @@ export function TripHero({
             <em>{formatMoney(trip.budgetCents)}</em> &nbsp;·&nbsp;{" "}
             <em>{committedPct}%</em> committed
           </div>
+          {financials.hasAnyData ? (
+            <div className="trip-margin-line">
+              <span className="tm-label">Sell</span>{" "}
+              <em>
+                {formatAmountShort(
+                  financials.sellInBase,
+                  financials.baseCurrency,
+                )}
+              </em>
+              &nbsp;·&nbsp;<span className="tm-label">Cost</span>{" "}
+              <em>
+                {formatAmountShort(
+                  financials.costInBase,
+                  financials.baseCurrency,
+                )}
+              </em>
+              {financials.marginPct != null ? (
+                <>
+                  &nbsp;·&nbsp;
+                  <em
+                    className={`tm-margin${financials.unlockedCount === 0 ? " locked" : ""}`}
+                  >
+                    {financials.marginPct.toFixed(0)}% margin
+                  </em>
+                  {financials.unlockedCount > 0 ? (
+                    <span className="tm-unlocked">
+                      &nbsp;estimated · {financials.unlockedCount} unlocked
+                    </span>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         <div className="trip-hero-actions">
           <GenerateNarrativeButton

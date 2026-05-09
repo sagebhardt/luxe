@@ -1,4 +1,5 @@
 import type { bookings } from "@/lib/db/schema";
+import { BookingFinancials } from "./BookingFinancials";
 
 type Booking = typeof bookings.$inferSelect;
 
@@ -23,7 +24,13 @@ const BADGE_LABEL: Record<Booking["status"], string> = {
   cancelled: "cancelled",
 };
 
-export function CommittedDecisions({ bookings: rows }: { bookings: Booking[] }) {
+export function CommittedDecisions({
+  bookings: rows,
+  baseCurrency,
+}: {
+  bookings: Booking[];
+  baseCurrency: string;
+}) {
   return (
     <div className="cards-grid">
       {rows.map((b) => {
@@ -46,6 +53,7 @@ export function CommittedDecisions({ bookings: rows }: { bookings: Booking[] }) 
                 ))}
               </div>
             ) : null}
+            <BookingFinancials booking={b} baseCurrency={baseCurrency} />
           </div>
         );
       })}

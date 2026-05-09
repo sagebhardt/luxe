@@ -191,6 +191,82 @@ export async function getTripBudget(
   return { budgetCents: budget, categories: cats, remainingCents: remaining };
 }
 
+/**
+ * Roll up sell + cost across a trip's bookings, expressed in the
+ * trip's base currency. For locked rows we use the FX rate captured
+ * at lock time (historical accuracy). For unlocked rows we use today's
+ * rate as an estimate; we surface the unlocked count so the hero can
+ * mark the result as estimated.
+ */
+export async function getTripFinancials(tripId: string): Promise<{
+  baseCurrency: string;
+  sellInBase: number;
+  costInBase: number;
+  marginPct: number | null;
+  unlockedCount: number;
+  hasAnyData: boolean;
+}> {
+  const { getRate } = await import("@/lib/fx");
+  const trip = await db.query.trips.findFirst({
+    where: eq(trips.id, tripId),
+    columns: { baseCurrency: true },
+  });
+  const baseCurrency = trip?.baseCurrency ?? "USD";
+
+  const rows = await db
+    .select({
+      sellAmount: bookings.sellAmount,
+      costAmount: bookings.costAmount,
+      costCurrency: bookings.costCurrency,
+      costFxToBase: bookings.costFxToBase,
+      costLocked: bookings.costLocked,
+      status: bookings.status,
+    })
+    .from(bookings)
+    .where(
+      and(
+        eq(bookings.tripId, tripId),
+        inArray(bookings.status, ["confirmed", "pending"]),
+      ),
+    );
+
+  let sellInBase = 0;
+  let costInBase = 0;
+  let unlockedCount = 0;
+  let hasAnyData = false;
+
+  for (const r of rows) {
+    if (r.sellAmount) {
+      sellInBase += Number(r.sellAmount);
+      hasAnyData = true;
+    }
+    if (r.costAmount) {
+      hasAnyData = true;
+      const ccy = r.costCurrency ?? baseCurrency;
+      let rate: number;
+      if (r.costLocked && r.costFxToBase) {
+        rate = Number(r.costFxToBase);
+      } else {
+        unlockedCount += 1;
+        rate = ccy === baseCurrency ? 1 : await getRate(ccy, baseCurrency);
+      }
+      costInBase += Number(r.costAmount) * rate;
+    }
+  }
+
+  const marginPct =
+    sellInBase > 0 ? ((sellInBase - costInBase) / sellInBase) * 100 : null;
+
+  return {
+    baseCurrency,
+    sellInBase,
+    costInBase,
+    marginPct,
+    unlockedCount,
+    hasAnyData,
+  };
+}
+
 export async function listActiveShareTokens(tripId: string) {
   return db
     .select()

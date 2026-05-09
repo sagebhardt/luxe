@@ -213,6 +213,10 @@ export const trips = pgTable(
     travelerCount: integer().notNull().default(1),
     budgetCents: integer(),
     committedCents: integer().notNull().default(0),
+    /** ISO 4217 currency the trip is priced to the client in. Default
+     * USD; per-trip so the agency can sell a single trip in EUR or
+     * GBP if the client prefers. */
+    baseCurrency: text().notNull().default("USD"),
     status: tripStatus().notNull().default("draft"),
     summary: text(),
     /* Client-facing editorial narrative used by the public share page.
@@ -289,6 +293,18 @@ export const bookings = pgTable(
     provider: text(),
     detail: text(),
     priceCents: integer(),
+    /** Sell price (what the client pays for this line) — in the
+     * trip's base_currency. NUMERIC to handle currencies with 0
+     * decimals (CLP, JPY) without minor-units gymnastics. */
+    sellAmount: numeric({ precision: 14, scale: 2 }),
+    /** Supplier cost (what we pay) in cost_currency. */
+    costAmount: numeric({ precision: 14, scale: 2 }),
+    costCurrency: text(),
+    /** Multiplier from cost_currency → trip base_currency, captured
+     * at lock time so historical margins don't drift with FX. */
+    costFxToBase: numeric({ precision: 14, scale: 8 }),
+    costLocked: boolean().notNull().default(false),
+    costLockedAt: timestamp({ withTimezone: true }),
     status: bookingStatus().notNull().default("research"),
     occursOn: date(),
     metadata: jsonb().$type<Record<string, unknown>>(),
@@ -300,6 +316,36 @@ export const bookings = pgTable(
     index("bookings_status_idx").on(t.status),
   ],
 );
+
+/* -----------------------------------------------------------------
+ * FX rates — daily snapshot from open.er-api.com (or whichever source).
+ * Stored so per-line costs can be locked to historical rates.
+ * ----------------------------------------------------------------- */
+
+export const fxRates = pgTable(
+  "fx_rates",
+  {
+    fromCurrency: text().notNull(),
+    toCurrency: text().notNull(),
+    rate: numeric({ precision: 14, scale: 8 }).notNull(),
+    asOf: date().notNull(),
+    fetchedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("fx_rates_pair_idx").on(t.fromCurrency, t.toCurrency, t.asOf),
+  ],
+);
+
+/* -----------------------------------------------------------------
+ * App settings — single-row table holding org-wide config.
+ * Use settingsId=1 always; the check constraint enforces it.
+ * ----------------------------------------------------------------- */
+
+export const appSettings = pgTable("app_settings", {
+  id: integer().primaryKey().default(1),
+  reportingCurrency: text().notNull().default("USD"),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
 
 /* -----------------------------------------------------------------
  * Proactive alerts — surfaced by the daily monitoring agent

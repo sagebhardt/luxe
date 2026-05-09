@@ -7,6 +7,7 @@ import {
   agentDecisions,
   agentLogMessages,
   bookings,
+  trips,
 } from "@/lib/db/schema";
 
 type DecisionResult =
@@ -37,6 +38,11 @@ export async function approveDecisionAction(
       const priceCents = numOrNull(rec.priceCents);
       const detailLine =
         typeof rec.preferenceMatch === "string" ? rec.preferenceMatch : null;
+      /* Seed sellAmount from the recommended price. priceCents is a
+       * legacy USD-cents field; we'll keep it for back-compat but the
+       * authoritative sell value lives in the new numeric column. */
+      const sellAmount =
+        priceCents != null ? (priceCents / 100).toFixed(2) : null;
       await db.insert(bookings).values({
         tripId: decision.tripId,
         decisionId: decision.id,
@@ -44,6 +50,7 @@ export async function approveDecisionAction(
         title: decision.headline,
         detail: detailLine,
         priceCents,
+        sellAmount,
         status: "confirmed",
         metadata: {
           featured: true,

@@ -109,3 +109,55 @@ export function pct(numerator: number, denominator: number): number {
   if (!denominator) return 0;
   return Math.min(100, Math.round((numerator / denominator) * 100));
 }
+
+/** Format a numeric amount with currency. Handles 0-decimal currencies
+ * (CLP, JPY, KRW) automatically via Intl.NumberFormat. */
+export function formatAmount(
+  amount: number | string | null | undefined,
+  currency = "USD",
+): string {
+  if (amount == null) return "—";
+  const n = typeof amount === "string" ? Number(amount) : amount;
+  if (!Number.isFinite(n)) return "—";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    /* Let Intl decide the right decimal count per ISO 4217. */
+  }).format(n);
+}
+
+/** Compact form for hero / KPI strips. "$28.4k" / "CLP$2.1M" etc. */
+export function formatAmountShort(
+  amount: number | string | null | undefined,
+  currency = "USD",
+): string {
+  if (amount == null) return "—";
+  const n = typeof amount === "string" ? Number(amount) : amount;
+  if (!Number.isFinite(n)) return "—";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(n);
+}
+
+/** ISO 4217 currencies the agency is likely to deal in. Order = display order. */
+export const SUPPORTED_CURRENCIES = [
+  "USD",
+  "EUR",
+  "GBP",
+  "CHF",
+  "CLP",
+  "BRL",
+  "ARS",
+  "MXN",
+  "JPY",
+  "AUD",
+  "CAD",
+  "AED",
+  "THB",
+  "ZAR",
+] as const;
+
+export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
