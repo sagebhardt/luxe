@@ -4,6 +4,12 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { activityLog, clients, trips } from "@/lib/db/schema";
+import {
+  buildTripFromPrompt,
+  TripBuilderError,
+  type TripBuilderOutput,
+} from "@/lib/ai/agents/trip-builder";
+import { ProviderConfigError } from "@/lib/ai/registry";
 
 const AVATAR_COLORS = ["av-1", "av-2", "av-3", "av-4", "av-5"] as const;
 const ALLOWED_TAGS = ["vip", "active", "prospect", "dormant"] as const;
@@ -73,6 +79,81 @@ export async function createTripAndGo(formData: FormData): Promise<void> {
   if (r.ok) redirect(`/trip?id=${r.tripId}`);
   /* On error, throw so the client transition surfaces it */
   throw new Error(r.error);
+}
+
+export type ProposeTripResult =
+  | { ok: true; proposal: TripBuilderOutput }
+  | { ok: false; error: string };
+
+export async function proposeTripAction(
+  clientId: string,
+  prompt: string,
+): Promise<ProposeTripResult> {
+  try {
+    const proposal = await buildTripFromPrompt({ clientId, prompt });
+    return { ok: true, proposal };
+  } catch (err) {
+    const error =
+      err instanceof TripBuilderError || err instanceof ProviderConfigError
+        ? err.message
+        : err instanceof Error
+          ? err.message
+          : "trip parse failed";
+    return { ok: false, error };
+  }
+}
+
+export async function createTripFromProposalAction(opts: {
+  clientId: string;
+  proposal: TripBuilderOutput;
+}): Promise<CreateTripResult> {
+  const { clientId, proposal } = opts;
+  if (!clientId) return { ok: false, error: "clientId required" };
+  if (!proposal.destination)
+    return { ok: false, error: "Destination is required" };
+
+  /* Persist segments + agent summary into trip.summary so itinerary
+   * agent and the share page can see the multi-leg structure. */
+  const summaryLines = [
+    proposal.summary,
+    "",
+    proposal.segments
+      .map((s, i) => {
+        const note = s.notes ? ` — ${s.notes}` : "";
+        return `Leg ${i + 1}: ${s.destination} (${s.days} day${s.days === 1 ? "" : "s"})${note}`;
+      })
+      .join("\n"),
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  try {
+    const [row] = await db
+      .insert(trips)
+      .values({
+        clientId,
+        name: proposal.name,
+        destination: proposal.destination,
+        startDate: proposal.startDate,
+        endDate: proposal.endDate,
+        travelerCount: proposal.travelerCount,
+        budgetCents:
+          proposal.budgetUsd != null
+            ? Math.round(proposal.budgetUsd * 100)
+            : null,
+        status: "pending",
+        summary: summaryLines,
+      })
+      .returning({ id: trips.id });
+    revalidatePath("/clients");
+    revalidatePath("/trip");
+    return { ok: true, tripId: row.id };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Trip creation failed",
+    };
+  }
 }
 
 export type CreateClientResult =
