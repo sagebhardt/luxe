@@ -24,6 +24,16 @@ export const clientTag = pgEnum("client_tag", [
   "dormant",
 ]);
 
+export const lifecycleStage = pgEnum("lifecycle_stage", [
+  "lead",
+  "discovery",
+  "proposing",
+  "booked",
+  "traveling",
+  "returning",
+  "dormant",
+]);
+
 export const tripStatus = pgEnum("trip_status", [
   "draft",
   "active",
@@ -135,6 +145,7 @@ export const clients = pgTable(
     email: text(),
     phone: text(),
     tag: clientTag().notNull().default("prospect"),
+    stage: lifecycleStage().notNull().default("lead"),
     avatarColor: text(),
     npsScore: integer(),
     lifetimeValueCents: integer().notNull().default(0),

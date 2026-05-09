@@ -43,6 +43,13 @@
       "when": 1778315365745,
       "tag": "0005_skinny_mentor",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778330760187,
+      "tag": "0006_cute_wallow",
+      "breakpoints": true
     }
   ]
 }

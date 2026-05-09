@@ -1,0 +1,2 @@
+CREATE TYPE "public"."lifecycle_stage" AS ENUM('lead', 'discovery', 'proposing', 'booked', 'traveling', 'returning', 'dormant');--> statement-breakpoint
+ALTER TABLE "clients" ADD COLUMN "stage" "lifecycle_stage" DEFAULT 'lead' NOT NULL;

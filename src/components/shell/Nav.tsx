@@ -7,6 +7,7 @@ import { UserButton } from "@clerk/nextjs";
 const TABS = [
   { label: "Trip Planning", href: "/trip" },
   { label: "Client CRM", href: "/clients" },
+  { label: "Pipeline", href: "/pipeline" },
 ];
 
 export function Nav({
