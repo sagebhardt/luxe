@@ -5,8 +5,19 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { bookings, trips } from "@/lib/db/schema";
 import { getRate } from "@/lib/fx";
+import {
+  AuthError,
+  assertOwnsBooking,
+  getCurrentUserOrThrow,
+} from "@/lib/auth";
 
 type Result = { ok: true } | { ok: false; error: string };
+
+function authError(err: unknown, fallback: string): string {
+  if (err instanceof AuthError) return err.message;
+  if (err instanceof Error) return err.message;
+  return fallback;
+}
 
 function parseAmount(raw: string): number | null {
   const cleaned = raw.replace(/[^0-9.\-]/g, "");
@@ -29,6 +40,8 @@ export async function setBookingFinancialsAction(
 ): Promise<Result> {
   if (!bookingId) return { ok: false, error: "bookingId required" };
   try {
+    const viewer = await getCurrentUserOrThrow();
+    await assertOwnsBooking(bookingId, viewer);
     const existing = await db.query.bookings.findFirst({
       where: eq(bookings.id, bookingId),
       columns: { id: true, costLocked: true },
@@ -72,6 +85,8 @@ export async function lockBookingCostAction(
 ): Promise<Result> {
   if (!bookingId) return { ok: false, error: "bookingId required" };
   try {
+    const viewer = await getCurrentUserOrThrow();
+    await assertOwnsBooking(bookingId, viewer);
     const row = await db.query.bookings.findFirst({
       where: eq(bookings.id, bookingId),
       columns: {
@@ -124,6 +139,8 @@ export async function unlockBookingCostAction(
 ): Promise<Result> {
   if (!bookingId) return { ok: false, error: "bookingId required" };
   try {
+    const viewer = await getCurrentUserOrThrow();
+    await assertOwnsBooking(bookingId, viewer);
     await db
       .update(bookings)
       .set({

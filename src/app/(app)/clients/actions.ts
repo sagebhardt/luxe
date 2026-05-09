@@ -10,9 +10,20 @@ import {
   type TripBuilderOutput,
 } from "@/lib/ai/agents/trip-builder";
 import { ProviderConfigError } from "@/lib/ai/registry";
+import {
+  AuthError,
+  assertOwnsClient,
+  getCurrentUserOrThrow,
+} from "@/lib/auth";
 
 const AVATAR_COLORS = ["av-1", "av-2", "av-3", "av-4", "av-5"] as const;
 const ALLOWED_TAGS = ["vip", "active", "prospect", "dormant"] as const;
+
+function authError(err: unknown, fallback: string) {
+  if (err instanceof AuthError) return err.message;
+  if (err instanceof Error) return err.message;
+  return fallback;
+}
 
 export type CreateTripResult =
   | { ok: true; tripId: string }
@@ -50,6 +61,8 @@ export async function createTripAction(
   }
 
   try {
+    const viewer = await getCurrentUserOrThrow();
+    await assertOwnsClient(clientId, viewer);
     const [row] = await db
       .insert(trips)
       .values({
@@ -67,10 +80,7 @@ export async function createTripAction(
     revalidatePath("/trip");
     return { ok: true, tripId: row.id };
   } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : "Trip creation failed",
-    };
+    return { ok: false, error: authError(err, "Trip creation failed") };
   }
 }
 
@@ -90,11 +100,15 @@ export async function proposeTripAction(
   prompt: string,
 ): Promise<ProposeTripResult> {
   try {
+    const viewer = await getCurrentUserOrThrow();
+    await assertOwnsClient(clientId, viewer);
     const proposal = await buildTripFromPrompt({ clientId, prompt });
     return { ok: true, proposal };
   } catch (err) {
     const error =
-      err instanceof TripBuilderError || err instanceof ProviderConfigError
+      err instanceof AuthError ||
+      err instanceof TripBuilderError ||
+      err instanceof ProviderConfigError
         ? err.message
         : err instanceof Error
           ? err.message
@@ -128,6 +142,8 @@ export async function createTripFromProposalAction(opts: {
     .join("\n");
 
   try {
+    const viewer = await getCurrentUserOrThrow();
+    await assertOwnsClient(clientId, viewer);
     const [row] = await db
       .insert(trips)
       .values({
@@ -149,10 +165,7 @@ export async function createTripFromProposalAction(opts: {
     revalidatePath("/trip");
     return { ok: true, tripId: row.id };
   } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : "Trip creation failed",
-    };
+    return { ok: false, error: authError(err, "Trip creation failed") };
   }
 }
 
@@ -172,6 +185,8 @@ export async function saveNoteAction(
   if (!text) return { ok: false, error: "Note cannot be empty" };
   if (!clientId) return { ok: false, error: "clientId is required" };
   try {
+    const viewer = await getCurrentUserOrThrow();
+    await assertOwnsClient(clientId, viewer);
     await db.insert(activityLog).values({
       clientId,
       type: "note",
@@ -181,10 +196,7 @@ export async function saveNoteAction(
     revalidatePath("/clients");
     return { ok: true };
   } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : "Save failed",
-    };
+    return { ok: false, error: authError(err, "Save failed") };
   }
 }
 
@@ -209,6 +221,10 @@ export async function createClientAction(
   const avatarColor = AVATAR_COLORS[hash % AVATAR_COLORS.length];
 
   try {
+    const viewer = await getCurrentUserOrThrow();
+    /* New clients are owned by their creating ITD by default. Admins
+     * creating a client also get listed as the owner — they can
+     * reassign later. */
     const [row] = await db
       .insert(clients)
       .values({
@@ -219,14 +235,12 @@ export async function createClientAction(
         avatarColor,
         notes,
         lifetimeValueCents: 0,
+        ownerId: viewer.id,
       })
       .returning({ id: clients.id });
     revalidatePath("/clients");
     return { ok: true, clientId: row.id };
   } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : "Client creation failed",
-    };
+    return { ok: false, error: authError(err, "Client creation failed") };
   }
 }

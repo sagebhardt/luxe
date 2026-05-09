@@ -1,18 +1,42 @@
 import "server-only";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { proactiveAlerts } from "@/lib/db/schema";
+import { clients, proactiveAlerts } from "@/lib/db/schema";
+import type { Viewer } from "@/lib/auth";
 
-export async function listFreshAlerts(limit = 8) {
-  return db.query.proactiveAlerts.findMany({
-    where: and(
-      isNull(proactiveAlerts.dismissedAt),
-      isNull(proactiveAlerts.resolvedAt),
-    ),
-    with: { client: true },
-    orderBy: [desc(proactiveAlerts.triggeredAt)],
-    limit,
-  });
+export async function listFreshAlerts(viewer: Viewer, limit = 8) {
+  /* Scope alerts to the viewer's clients (admins see all). */
+  const ownClause =
+    viewer.role === "admin" ? undefined : eq(clients.ownerId, viewer.id);
+
+  const rows = await db
+    .select({
+      id: proactiveAlerts.id,
+      clientId: proactiveAlerts.clientId,
+      kind: proactiveAlerts.kind,
+      severity: proactiveAlerts.severity,
+      title: proactiveAlerts.title,
+      body: proactiveAlerts.body,
+      suggestedAction: proactiveAlerts.suggestedAction,
+      dedupeKey: proactiveAlerts.dedupeKey,
+      detail: proactiveAlerts.detail,
+      triggeredAt: proactiveAlerts.triggeredAt,
+      dismissedAt: proactiveAlerts.dismissedAt,
+      resolvedAt: proactiveAlerts.resolvedAt,
+      client: clients,
+    })
+    .from(proactiveAlerts)
+    .innerJoin(clients, eq(clients.id, proactiveAlerts.clientId))
+    .where(
+      and(
+        isNull(proactiveAlerts.dismissedAt),
+        isNull(proactiveAlerts.resolvedAt),
+        ownClause,
+      ),
+    )
+    .orderBy(desc(proactiveAlerts.triggeredAt))
+    .limit(limit);
+  return rows;
 }
 
 export async function dismissAlert(id: string) {

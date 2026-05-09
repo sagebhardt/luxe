@@ -9,6 +9,11 @@ import {
   bookings,
   trips,
 } from "@/lib/db/schema";
+import {
+  AuthError,
+  assertOwnsTrip,
+  getCurrentUserOrThrow,
+} from "@/lib/auth";
 
 type DecisionResult =
   | { ok: true }
@@ -18,10 +23,12 @@ export async function approveDecisionAction(
   decisionId: string,
 ): Promise<DecisionResult> {
   try {
+    const viewer = await getCurrentUserOrThrow();
     const decision = await db.query.agentDecisions.findFirst({
       where: eq(agentDecisions.id, decisionId),
     });
     if (!decision) return { ok: false, error: "Decision not found" };
+    await assertOwnsTrip(decision.tripId, viewer);
     if (decision.status !== "pending_approval") {
       return {
         ok: false,
@@ -83,7 +90,12 @@ export async function approveDecisionAction(
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "approval failed",
+      error:
+        err instanceof AuthError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "approval failed",
     };
   }
 }
@@ -92,10 +104,12 @@ export async function dismissDecisionAction(
   decisionId: string,
 ): Promise<DecisionResult> {
   try {
+    const viewer = await getCurrentUserOrThrow();
     const decision = await db.query.agentDecisions.findFirst({
       where: eq(agentDecisions.id, decisionId),
     });
     if (!decision) return { ok: false, error: "Decision not found" };
+    await assertOwnsTrip(decision.tripId, viewer);
 
     await db
       .update(agentDecisions)
@@ -113,7 +127,12 @@ export async function dismissDecisionAction(
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "dismiss failed",
+      error:
+        err instanceof AuthError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "dismiss failed",
     };
   }
 }

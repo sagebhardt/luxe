@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { agentLogMessages, bookings, trips } from "@/lib/db/schema";
 import { ProposalPdf, registerProposalFonts } from "@/lib/pdf/proposal-pdf";
 import type { TripNarrative } from "@/lib/types/narrative";
+import { AuthError, assertOwnsTrip, getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -13,6 +14,23 @@ type Params = Promise<{ id: string }>;
 
 export async function GET(req: Request, { params }: { params: Params }) {
   const { id } = await params;
+
+  /* Tenancy guard: only the owning ITD or an admin can render this
+   * trip's proposal. The PDF embeds client name, dates, prices —
+   * leaking it across ITDs would be a real privacy hit. */
+  const viewer = await getCurrentUser();
+  if (!viewer) {
+    return NextResponse.json({ error: "auth required" }, { status: 401 });
+  }
+  try {
+    await assertOwnsTrip(id, viewer);
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return NextResponse.json({ error: err.message }, { status: 403 });
+    }
+    throw err;
+  }
+
   /* Register the bundled fonts using this request's origin. We can't
    * use a static URL because Vercel deployment URLs are per-deploy and
    * we want preview deployments to load their own fonts. */

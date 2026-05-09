@@ -5,6 +5,12 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { documents, type documentKind } from "@/lib/db/schema";
 import { extractDocument } from "@/lib/ai/agents/document-extractor";
+import {
+  AuthError,
+  assertOwnsClient,
+  assertOwnsDocument,
+  getCurrentUserOrThrow,
+} from "@/lib/auth";
 
 const ALLOWED_KINDS = [
   "passport",
@@ -44,6 +50,17 @@ export async function uploadDocumentAction(
       ok: false,
       error: `Max upload size is ${MAX_BYTES / 1024 / 1024} MB. Try a smaller file.`,
     };
+
+  /* Tenancy: only the owning ITD (or an admin) can upload to this client. */
+  try {
+    const viewer = await getCurrentUserOrThrow();
+    await assertOwnsClient(clientId, viewer);
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof AuthError ? err.message : "auth failed",
+    };
+  }
 
   const arrayBuffer = await file.arrayBuffer();
   const content = Buffer.from(arrayBuffer);
@@ -106,13 +123,20 @@ export async function deleteDocumentAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!documentId) return { ok: false, error: "documentId required" };
   try {
+    const viewer = await getCurrentUserOrThrow();
+    await assertOwnsDocument(documentId, viewer);
     await db.delete(documents).where(eq(documents.id, documentId));
     revalidatePath("/clients");
     return { ok: true };
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Delete failed",
+      error:
+        err instanceof AuthError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Delete failed",
     };
   }
 }
@@ -126,6 +150,8 @@ export async function setDocumentKindAction(
   )
     return { ok: false, error: `unknown kind ${kind}` };
   try {
+    const viewer = await getCurrentUserOrThrow();
+    await assertOwnsDocument(documentId, viewer);
     await db
       .update(documents)
       .set({ kind: kind as (typeof ALLOWED_KINDS)[number] })
@@ -135,7 +161,12 @@ export async function setDocumentKindAction(
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Update failed",
+      error:
+        err instanceof AuthError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Update failed",
     };
   }
 }

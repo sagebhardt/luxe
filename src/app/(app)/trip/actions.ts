@@ -9,6 +9,11 @@ import {
 } from "@/lib/ai/agents/itinerary";
 import { runDiningAgent, DiningAgentInputError } from "@/lib/ai/agents/dining";
 import { ProviderConfigError } from "@/lib/ai/registry";
+import {
+  AuthError,
+  assertOwnsTrip,
+  getCurrentUserOrThrow,
+} from "@/lib/auth";
 
 export type AgentKind = "flight" | "hotel" | "itinerary" | "dining";
 
@@ -21,6 +26,8 @@ export async function runAgentAction(
   tripId: string,
 ): Promise<RunAgentResult> {
   try {
+    const viewer = await getCurrentUserOrThrow();
+    await assertOwnsTrip(tripId, viewer);
     let result;
     switch (agent) {
       case "flight":
@@ -44,6 +51,7 @@ export async function runAgentAction(
     };
   } catch (err) {
     const error =
+      err instanceof AuthError ||
       err instanceof FlightAgentInputError ||
       err instanceof HotelAgentInputError ||
       err instanceof ItineraryAgentInputError ||

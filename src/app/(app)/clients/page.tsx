@@ -79,7 +79,7 @@ export default async function ClientsPage({
     listClients(viewer, { filter, search }),
     getClientDetail(clientId, viewer),
     listDraftsForClient(clientId),
-    listFreshAlerts(),
+    listFreshAlerts(viewer),
     listDocumentsForClient(clientId),
   ]);
   /* Detail is null if the viewer doesn't own this client. Redirect to
