@@ -36,6 +36,14 @@ export type ResolvedAgent = {
   /* Each provider returns a callable language model. We expose it
    * normalized as `model` so the agent code is provider-agnostic. */
   model: ReturnType<GoogleVertexProvider>;
+  /** Internal: the underlying Vertex factory for building variant
+   * models (e.g. with Google Search grounding). */
+  _vertex?: GoogleVertexProvider;
+};
+
+export type ResolveOptions = {
+  /** Enable Gemini Google Search grounding on the resolved model. */
+  useSearchGrounding?: boolean;
 };
 
 export class ProviderConfigError extends Error {
@@ -45,7 +53,10 @@ export class ProviderConfigError extends Error {
   }
 }
 
-export async function resolveAgent(agent: AgentKind): Promise<ResolvedAgent> {
+export async function resolveAgent(
+  agent: AgentKind,
+  options: ResolveOptions = {},
+): Promise<ResolvedAgent> {
   const row = await db.query.agentConfigs.findFirst({
     where: eq(agentConfigs.agentType, agent),
     with: { provider: true },
@@ -67,22 +78,24 @@ export async function resolveAgent(agent: AgentKind): Promise<ResolvedAgent> {
     );
   }
 
-  const model = buildModel(row.provider, row.modelName);
+  const built = buildModel(row.provider, row.modelName, options);
 
   return {
     agent,
     modelName: row.modelName,
     systemPrompt: row.systemPrompt,
     settings: row.settings,
-    provider: model,
-    model,
+    provider: built.model,
+    model: built.model,
+    _vertex: built.vertex,
   };
 }
 
 function buildModel(
   provider: typeof modelProviders.$inferSelect,
   modelName: string,
-) {
+  _options: ResolveOptions = {},
+): { model: ReturnType<GoogleVertexProvider>; vertex: GoogleVertexProvider } {
   switch (provider.kind) {
     case "google_vertex": {
       const config = (provider.config ?? {}) as {
@@ -107,7 +120,9 @@ function buildModel(
         location,
         googleAuthOptions: { authClient },
       });
-      return vertex(modelName);
+      /* Search grounding is enabled via `providerOptions.google` on
+       * the generateText/generateObject call, not the model factory. */
+      return { model: vertex(modelName), vertex };
     }
     case "google_ai":
     case "openai":
