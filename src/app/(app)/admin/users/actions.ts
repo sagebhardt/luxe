@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { AuthError, requireAdmin } from "@/lib/auth";
+import { recordAudit } from "@/lib/audit";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -32,10 +33,21 @@ export async function setUserRoleAction(
         error: "Refusing to demote the current admin from this UI.",
       };
     }
+    const before = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: { role: true, name: true, email: true },
+    });
     await db
       .update(users)
       .set({ role, updatedAt: new Date() })
       .where(eq(users.id, userId));
+    if (before && before.role !== role) {
+      await recordAudit(me, "user_role_change", { type: "user", id: userId }, {
+        before: { role: before.role },
+        after: { role },
+        note: `${before.name ?? before.email ?? userId}: ${before.role} → ${role}`,
+      });
+    }
     revalidatePath("/admin/users");
     return { ok: true };
   } catch (err) {
@@ -52,7 +64,11 @@ export async function setUserCommissionAction(
     return { ok: false, error: "Commission must be between 0 and 1" };
   }
   try {
-    await requireAdmin();
+    const me = await requireAdmin();
+    const before = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: { commissionPctBase: true, name: true, email: true },
+    });
     await db
       .update(users)
       .set({
@@ -60,6 +76,18 @@ export async function setUserCommissionAction(
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId));
+    if (before && Number(before.commissionPctBase) !== pct) {
+      await recordAudit(
+        me,
+        "user_commission_change",
+        { type: "user", id: userId },
+        {
+          before: { commissionPctBase: before.commissionPctBase },
+          after: { commissionPctBase: pct.toFixed(4) },
+          note: `${before.name ?? before.email ?? userId}: ${(Number(before.commissionPctBase) * 100).toFixed(0)}% → ${(pct * 100).toFixed(0)}%`,
+        },
+      );
+    }
     revalidatePath("/admin/users");
     revalidatePath("/reports");
     revalidatePath("/trip");

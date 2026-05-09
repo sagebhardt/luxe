@@ -4729,7 +4729,7 @@
 
 .bk-fin-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 90px;
+  grid-template-columns: 1fr 90px 1fr 90px;
   gap: 8px;
 }
 
@@ -6768,4 +6768,80 @@
   text-transform: uppercase;
   color: var(--stone-lt);
   margin-top: 4px;
+}
+
+/* -------- Invite form (on /admin/users) -------- */
+
+.invite-form {
+  margin: 0 0 24px;
+  padding: 18px 22px;
+  background: var(--ivory);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.invite-row {
+  display: grid;
+  grid-template-columns: 1fr 110px 110px auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.invite-input {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--warm-white);
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.invite-btn {
+  padding: 8px 18px;
+  background: var(--forest);
+  color: var(--ivory);
+  border: none;
+  border-radius: 5px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.invite-btn:disabled {
+  background: var(--stone-lt);
+  cursor: not-allowed;
+}
+
+.invite-msg {
+  margin-top: 10px;
+  font-size: 11px;
+  font-style: italic;
+}
+
+.invite-err {
+  color: var(--rust);
+}
+
+.invite-ok {
+  color: var(--forest);
+}
+
+.invite-pending-tag {
+  background: rgba(196, 168, 130, 0.18);
+  color: var(--bark);
+}
+
+.invite-revoke {
+  margin-left: 8px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+@media (max-width: 700px) {
+  .invite-row {
+    grid-template-columns: 1fr;
+  }
 }

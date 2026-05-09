@@ -7,6 +7,7 @@ import {
   clients,
   documents,
   trips,
+  userInvitations,
   users,
 } from "@/lib/db/schema";
 
@@ -42,7 +43,29 @@ export async function getCurrentUser(): Promise<Viewer | null> {
 
   /* First request after migration: pull profile from Clerk and provision. */
   const profile = await currentUser();
-  const desiredRole = ADMIN_IDS.includes(clerkId) ? "admin" : "itd";
+  const email = profile?.primaryEmailAddress?.emailAddress ?? null;
+
+  /* Honor any pending invitation for this email — the admin set the
+   * intended role + commission tier when they invited; carry that
+   * forward instead of defaulting to itd/50%. ADMIN_USER_IDS env var
+   * still overrides everything. */
+  let desiredRole: "itd" | "admin" = "itd";
+  let desiredPct = "0.5000";
+  if (ADMIN_IDS.includes(clerkId)) {
+    desiredRole = "admin";
+  } else if (email) {
+    const pending = await db.query.userInvitations.findFirst({
+      where: and(
+        eq(userInvitations.email, email.toLowerCase()),
+        eq(userInvitations.status, "pending"),
+      ),
+    });
+    if (pending) {
+      desiredRole = pending.intendedRole;
+      desiredPct = pending.intendedCommissionPctBase;
+    }
+  }
+
   const [row] = await db
     .insert(users)
     .values({
@@ -51,11 +74,25 @@ export async function getCurrentUser(): Promise<Viewer | null> {
         profile?.fullName ||
         [profile?.firstName, profile?.lastName].filter(Boolean).join(" ") ||
         null,
-      email: profile?.primaryEmailAddress?.emailAddress ?? null,
+      email,
       role: desiredRole,
+      commissionPctBase: desiredPct,
     })
     .onConflictDoNothing({ target: users.clerkUserId })
     .returning();
+
+  /* Mark any pending invitation as accepted. */
+  if (email && row) {
+    await db
+      .update(userInvitations)
+      .set({ status: "accepted", acceptedAt: new Date() })
+      .where(
+        and(
+          eq(userInvitations.email, email.toLowerCase()),
+          eq(userInvitations.status, "pending"),
+        ),
+      );
+  }
   /* If onConflictDoNothing skipped (race), re-fetch. */
   if (!row) {
     const refetched = await db.query.users.findFirst({

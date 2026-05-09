@@ -1,13 +1,25 @@
+import { desc, eq } from "drizzle-orm";
 import { listUsersWithStats } from "@/lib/queries/users";
 import { UserRow } from "@/components/admin/UserRow";
+import { InviteForm } from "@/components/admin/InviteForm";
+import { InvitationRow } from "@/components/admin/InvitationRow";
 import { formatAmountShort } from "@/lib/format";
 import { getCurrentUserOrThrow } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { userInvitations } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
   const me = await getCurrentUserOrThrow();
-  const users = await listUsersWithStats();
+  const [users, pendingInvites] = await Promise.all([
+    listUsersWithStats(),
+    db
+      .select()
+      .from(userInvitations)
+      .where(eq(userInvitations.status, "pending"))
+      .orderBy(desc(userInvitations.createdAt)),
+  ]);
   const itdCount = users.filter((u) => u.role === "itd").length;
   const adminCount = users.filter((u) => u.role === "admin").length;
   const totalSell = users.reduce((acc, u) => acc + u.sellTotal, 0);
@@ -41,12 +53,7 @@ export default async function AdminUsersPage() {
         </div>
       </div>
 
-      <div className="admin-invite-hint">
-        <strong>Invitar a un ITD:</strong> compártele la URL de sign-up.
-        Aparecerá aquí automáticamente cuando inicie sesión por primera vez,
-        listado como ITD con comisión 50%. Desde aquí puedes ajustar su
-        tier o promoverla a admin.
-      </div>
+      <InviteForm />
 
       <table className="users-table">
         <thead>
@@ -61,6 +68,9 @@ export default async function AdminUsersPage() {
           </tr>
         </thead>
         <tbody>
+          {pendingInvites.map((inv) => (
+            <InvitationRow key={inv.id} invitation={inv} />
+          ))}
           {users.map((u) => (
             <UserRow key={u.id} user={u} isMe={u.id === me.id} />
           ))}

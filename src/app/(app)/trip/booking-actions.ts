@@ -34,6 +34,7 @@ export async function setBookingFinancialsAction(
   bookingId: string,
   patch: {
     sellAmount?: string | null;
+    sellCurrency?: string | null;
     costAmount?: string | null;
     costCurrency?: string | null;
   },
@@ -52,6 +53,9 @@ export async function setBookingFinancialsAction(
     if (patch.sellAmount !== undefined) {
       const v = patch.sellAmount == null ? null : parseAmount(patch.sellAmount);
       update.sellAmount = v == null ? null : v.toFixed(2);
+    }
+    if (patch.sellCurrency !== undefined) {
+      update.sellCurrency = patch.sellCurrency || null;
     }
     if (!existing.costLocked) {
       if (patch.costAmount !== undefined) {
@@ -92,6 +96,8 @@ export async function lockBookingCostAction(
       columns: {
         id: true,
         tripId: true,
+        sellAmount: true,
+        sellCurrency: true,
         costAmount: true,
         costCurrency: true,
         costLocked: true,
@@ -112,12 +118,22 @@ export async function lockBookingCostAction(
     });
     const baseCurrency = trip?.baseCurrency ?? "USD";
 
-    const rate = await getRate(row.costCurrency, baseCurrency);
+    const costRate = await getRate(row.costCurrency, baseCurrency);
+
+    /* Lock the sell-side rate too if sell is in a different currency.
+     * Otherwise leave sell_fx_to_base null (sell is in base, no
+     * conversion needed). */
+    let sellFx: string | null = null;
+    if (row.sellCurrency && row.sellCurrency !== baseCurrency) {
+      const r = await getRate(row.sellCurrency, baseCurrency);
+      sellFx = r.toFixed(8);
+    }
 
     await db
       .update(bookings)
       .set({
-        costFxToBase: rate.toFixed(8),
+        costFxToBase: costRate.toFixed(8),
+        sellFxToBase: sellFx,
         costLocked: true,
         costLockedAt: new Date(),
       })
@@ -147,6 +163,7 @@ export async function unlockBookingCostAction(
         costLocked: false,
         costLockedAt: null,
         costFxToBase: null,
+        sellFxToBase: null,
       })
       .where(eq(bookings.id, bookingId));
     revalidatePath("/trip");

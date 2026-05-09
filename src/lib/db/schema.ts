@@ -156,6 +156,14 @@ export const providerKind = pgEnum("provider_kind", [
 
 export const userRole = pgEnum("user_role", ["itd", "admin"]);
 
+export const auditAction = pgEnum("audit_action", [
+  "user_role_change",
+  "user_commission_change",
+  "client_owner_reassign",
+  "user_invited",
+  "user_invitation_revoked",
+]);
+
 /* -----------------------------------------------------------------
  * Users (ITDs + Odylic admins). Bridges Clerk identity into our DB
  * so we can attach ownership, commission tiers, and per-user prefs.
@@ -179,6 +187,64 @@ export const users = pgTable(
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("users_clerk_idx").on(t.clerkUserId)],
+);
+
+/* -----------------------------------------------------------------
+ * Audit log — admin actions that change network state. before/after
+ * stored as jsonb so we can support arbitrary action shapes without
+ * schema churn. Read-only from the UI; helper recordAudit() is the
+ * only writer.
+ * ----------------------------------------------------------------- */
+
+export const auditLog = pgTable(
+  "audit_log",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    actorUserId: uuid().references(() => users.id, { onDelete: "set null" }),
+    action: auditAction().notNull(),
+    targetType: text().notNull(),
+    targetId: text(),
+    /** Pre-change state, if applicable. */
+    before: jsonb().$type<Record<string, unknown>>(),
+    /** Post-change state, if applicable. */
+    after: jsonb().$type<Record<string, unknown>>(),
+    /** Free-form additional context. */
+    note: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("audit_log_created_idx").on(t.createdAt),
+    index("audit_log_actor_idx").on(t.actorUserId),
+  ],
+);
+
+/* -----------------------------------------------------------------
+ * User invitations — pending Clerk invitations, surfaced on /admin/users
+ * so admins can see who's been invited but hasn't signed up yet.
+ * ----------------------------------------------------------------- */
+
+export const userInvitations = pgTable(
+  "user_invitations",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    /** Clerk's invitation ID — used for revoke. */
+    clerkInvitationId: text().notNull().unique(),
+    email: text().notNull(),
+    /** Role to assign once they sign up. Stored here because Clerk
+     * doesn't carry our role enum. */
+    intendedRole: userRole().notNull().default("itd"),
+    intendedCommissionPctBase: numeric({ precision: 5, scale: 4 })
+      .notNull()
+      .default("0.5000"),
+    invitedByUserId: uuid().references(() => users.id, {
+      onDelete: "set null",
+    }),
+    /** 'pending' | 'accepted' | 'revoked' — local mirror of Clerk state. */
+    status: text().notNull().default("pending"),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    acceptedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [index("user_invitations_status_idx").on(t.status)],
 );
 
 /* -----------------------------------------------------------------
@@ -326,10 +392,15 @@ export const bookings = pgTable(
     provider: text(),
     detail: text(),
     priceCents: integer(),
-    /** Sell price (what the client pays for this line) — in the
-     * trip's base_currency. NUMERIC to handle currencies with 0
-     * decimals (CLP, JPY) without minor-units gymnastics. */
+    /** Sell price (what the client pays for this line) in
+     * sell_currency (default = trip's base_currency). NUMERIC to
+     * handle currencies with 0 decimals (CLP, JPY) without
+     * minor-units gymnastics. */
     sellAmount: numeric({ precision: 14, scale: 2 }),
+    sellCurrency: text(),
+    /** Multiplier from sell_currency → trip base_currency, captured
+     * at lock time. NULL when sell_currency == base_currency. */
+    sellFxToBase: numeric({ precision: 14, scale: 8 }),
     /** Supplier cost (what we pay) in cost_currency. */
     costAmount: numeric({ precision: 14, scale: 2 }),
     costCurrency: text(),

@@ -93,6 +93,8 @@ export async function getReportSummary(viewer: Viewer): Promise<ReportSummary> {
       startDate: trips.startDate,
       baseCurrency: trips.baseCurrency,
       sellAmount: bookings.sellAmount,
+      sellCurrency: bookings.sellCurrency,
+      sellFxToBase: bookings.sellFxToBase,
       costAmount: bookings.costAmount,
       costCurrency: bookings.costCurrency,
       costFxToBase: bookings.costFxToBase,
@@ -147,9 +149,23 @@ export async function getReportSummary(viewer: Viewer): Promise<ReportSummary> {
       reportingCurrency,
     );
 
-    const sellInReport = r.sellAmount
-      ? Number(r.sellAmount) * baseToReporting
-      : 0;
+    /* Sell defaults to trip base; if a different currency is set on
+     * the line, convert through base using the locked rate (or
+     * today's). Then convert base → reporting currency at today's rate. */
+    let sellInBase = 0;
+    if (r.sellAmount) {
+      const sellCcy = r.sellCurrency ?? r.baseCurrency ?? "USD";
+      let sellToBase = 1;
+      if (sellCcy !== (r.baseCurrency ?? "USD")) {
+        if (r.costLocked && r.sellFxToBase) {
+          sellToBase = Number(r.sellFxToBase);
+        } else {
+          sellToBase = await rateOf(sellCcy, r.baseCurrency ?? "USD");
+        }
+      }
+      sellInBase = Number(r.sellAmount) * sellToBase;
+    }
+    const sellInReport = sellInBase * baseToReporting;
 
     let costInReport = 0;
     let unlocked = 0;

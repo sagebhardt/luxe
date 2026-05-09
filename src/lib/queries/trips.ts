@@ -278,6 +278,8 @@ export async function getTripFinancials(tripId: string): Promise<{
   const rows = await db
     .select({
       sellAmount: bookings.sellAmount,
+      sellCurrency: bookings.sellCurrency,
+      sellFxToBase: bookings.sellFxToBase,
       costAmount: bookings.costAmount,
       costCurrency: bookings.costCurrency,
       costFxToBase: bookings.costFxToBase,
@@ -299,8 +301,19 @@ export async function getTripFinancials(tripId: string): Promise<{
 
   for (const r of rows) {
     if (r.sellAmount) {
-      sellInBase += Number(r.sellAmount);
       hasAnyData = true;
+      /* Sell currency defaults to trip base. If different, use the
+       * locked FX rate when present (cost-side parity), else today's. */
+      const sellCcy = r.sellCurrency ?? baseCurrency;
+      let sellRate = 1;
+      if (sellCcy !== baseCurrency) {
+        if (r.costLocked && r.sellFxToBase) {
+          sellRate = Number(r.sellFxToBase);
+        } else {
+          sellRate = await getRate(sellCcy, baseCurrency);
+        }
+      }
+      sellInBase += Number(r.sellAmount) * sellRate;
     }
     if (r.costAmount) {
       hasAnyData = true;

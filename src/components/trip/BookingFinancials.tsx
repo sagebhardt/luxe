@@ -26,6 +26,7 @@ export function BookingFinancials({
   const [error, setError] = useState<string | null>(null);
 
   const sell = booking.sellAmount;
+  const sellCcy = booking.sellCurrency ?? baseCurrency;
   const cost = booking.costAmount;
   const costCcy = booking.costCurrency ?? baseCurrency;
   const locked = booking.costLocked;
@@ -56,7 +57,7 @@ export function BookingFinancials({
         <div className="bk-fin-row">
           <span className="bk-fin-label">Sell</span>
           <span className="bk-fin-val">
-            {sell ? formatAmount(sell, baseCurrency) : "—"}
+            {sell ? formatAmount(sell, sellCcy) : "—"}
           </span>
           <span className="bk-fin-sep">·</span>
           <span className="bk-fin-label">Cost</span>
@@ -101,6 +102,7 @@ export function BookingFinancials({
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
         const sellAmount = String(fd.get("sellAmount") ?? "").trim();
+        const sellCurrency = String(fd.get("sellCurrency") ?? "").trim();
         const costAmount = String(fd.get("costAmount") ?? "").trim();
         const costCurrency = String(fd.get("costCurrency") ?? "").trim();
         const action = String(fd.get("intent") ?? "save");
@@ -117,6 +119,7 @@ export function BookingFinancials({
           }
           const r = await setBookingFinancialsAction(booking.id, {
             sellAmount: sellAmount || null,
+            sellCurrency: sellCurrency || null,
             costAmount: costAmount || null,
             costCurrency: costCurrency || null,
           });
@@ -137,7 +140,7 @@ export function BookingFinancials({
     >
       <div className="bk-fin-grid">
         <label className="bk-fin-field">
-          <span className="bk-fin-flbl">Sell ({baseCurrency})</span>
+          <span className="bk-fin-flbl">Sell</span>
           <input
             type="text"
             name="sellAmount"
@@ -146,6 +149,21 @@ export function BookingFinancials({
             placeholder="0.00"
             disabled={pending}
           />
+        </label>
+        <label className="bk-fin-field">
+          <span className="bk-fin-flbl">Sell ccy</span>
+          <select
+            name="sellCurrency"
+            defaultValue={sellCcy}
+            disabled={pending}
+          >
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+                {c === baseCurrency ? " (base)" : ""}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="bk-fin-field">
           <span className="bk-fin-flbl">Cost</span>
@@ -159,7 +177,7 @@ export function BookingFinancials({
           />
         </label>
         <label className="bk-fin-field">
-          <span className="bk-fin-flbl">Currency</span>
+          <span className="bk-fin-flbl">Cost ccy</span>
           <select
             name="costCurrency"
             defaultValue={costCcy}
@@ -168,6 +186,7 @@ export function BookingFinancials({
             {SUPPORTED_CURRENCIES.map((c) => (
               <option key={c} value={c}>
                 {c}
+                {c === baseCurrency ? " (base)" : ""}
               </option>
             ))}
           </select>
