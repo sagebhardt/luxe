@@ -135,8 +135,11 @@ function buildVertexAuthClient() {
   const audience = process.env.GOOGLE_VERTEX_AUDIENCE;
   const serviceAccount = process.env.GOOGLE_VERTEX_SERVICE_ACCOUNT_EMAIL;
 
-  if (!process.env.VERCEL_OIDC_TOKEN) {
-    // Local dev: undefined authClient → google-auth-library uses ADC
+  // VERCEL=1 in Vercel runtimes (build, prod, preview, dev). OIDC token
+  // is delivered per-request — env var or header — so we resolve it
+  // lazily inside subject_token_supplier rather than gating on it here.
+  // Locally without VERCEL=1, fall back to ADC (gcloud auth application-default login).
+  if (!process.env.VERCEL) {
     return undefined;
   }
   if (!audience || !serviceAccount) {
