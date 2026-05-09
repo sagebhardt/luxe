@@ -10,10 +10,12 @@ export type TripDaySummary = {
 };
 
 export type TripHero = {
+  id?: string;
   imageUrl: string;
   thumbUrl: string;
   authorName: string;
   authorUrl: string;
+  downloadLocation?: string;
 };
 
 export type TripNarrative = {
