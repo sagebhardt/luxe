@@ -154,6 +154,33 @@ export const providerKind = pgEnum("provider_kind", [
   "anthropic",
 ]);
 
+export const userRole = pgEnum("user_role", ["itd", "admin"]);
+
+/* -----------------------------------------------------------------
+ * Users (ITDs + Odylic admins). Bridges Clerk identity into our DB
+ * so we can attach ownership, commission tiers, and per-user prefs.
+ * Lazy-provisioned in src/lib/auth.ts on first authenticated request.
+ * ----------------------------------------------------------------- */
+
+export const users = pgTable(
+  "users",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    clerkUserId: text().notNull().unique(),
+    name: text(),
+    email: text(),
+    role: userRole().notNull().default("itd"),
+    /** Default commission share for this ITD (0..1). 0.5 = 50% to ITD,
+     * 50% to Odylic. Can be raised at higher tiers per the deck. */
+    commissionPctBase: numeric({ precision: 5, scale: 4 })
+      .notNull()
+      .default("0.5000"),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("users_clerk_idx").on(t.clerkUserId)],
+);
+
 /* -----------------------------------------------------------------
  * Clients (CRM)
  * ----------------------------------------------------------------- */
@@ -162,6 +189,9 @@ export const clients = pgTable(
   "clients",
   {
     id: uuid().primaryKey().defaultRandom(),
+    /** ITD who owns this client relationship. Nullable temporarily
+     * while we backfill seed data; new clients always have an owner. */
+    ownerId: uuid().references(() => users.id, { onDelete: "set null" }),
     name: text().notNull(),
     email: text(),
     phone: text(),
@@ -176,7 +206,10 @@ export const clients = pgTable(
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("clients_tag_idx").on(t.tag)],
+  (t) => [
+    index("clients_tag_idx").on(t.tag),
+    index("clients_owner_idx").on(t.ownerId),
+  ],
 );
 
 export const travelerPreferences = pgTable("traveler_preferences", {

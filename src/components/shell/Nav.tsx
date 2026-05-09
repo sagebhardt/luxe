@@ -13,8 +13,10 @@ const TABS = [
 
 export function Nav({
   activeAgentCount,
+  isAdmin,
 }: {
   activeAgentCount: number | null;
+  isAdmin: boolean;
 }) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname?.startsWith(href);
@@ -43,12 +45,14 @@ export function Nav({
           </div>
         ) : null}
         <div className="nav-badge">Tokyo · May 2026</div>
-        <Link
-          href="/admin/models"
-          className={`admin-link${pathname?.startsWith("/admin") ? " active" : ""}`}
-        >
-          Admin
-        </Link>
+        {isAdmin ? (
+          <Link
+            href="/admin/models"
+            className={`admin-link${pathname?.startsWith("/admin") ? " active" : ""}`}
+          >
+            Admin
+          </Link>
+        ) : null}
         <UserButton
           appearance={{
             elements: { avatarBox: { width: 28, height: 28 } },

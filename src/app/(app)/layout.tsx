@@ -1,7 +1,8 @@
 import { Nav } from "@/components/shell/Nav";
 import { db } from "@/lib/db";
-import { agentRuns } from "@/lib/db/schema";
+import { agentRuns, clients, trips } from "@/lib/db/schema";
 import { and, eq, gt, sql } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -15,23 +16,40 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const viewer = await getCurrentUser();
   let activeAgentCount: number | null = null;
   try {
     const cutoff = new Date(Date.now() - ACTIVE_WINDOW_MS);
-    const [row] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(agentRuns)
-      .where(
-        and(eq(agentRuns.status, "running"), gt(agentRuns.startedAt, cutoff)),
-      );
-    activeAgentCount = row?.count ?? 0;
+    const baseConditions = [
+      eq(agentRuns.status, "running"),
+      gt(agentRuns.startedAt, cutoff),
+    ];
+    /* For ITDs, only count agents on trips they own — admins see all. */
+    if (viewer && viewer.role !== "admin") {
+      const [row] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(agentRuns)
+        .innerJoin(trips, eq(trips.id, agentRuns.tripId))
+        .innerJoin(clients, eq(clients.id, trips.clientId))
+        .where(and(...baseConditions, eq(clients.ownerId, viewer.id)));
+      activeAgentCount = row?.count ?? 0;
+    } else {
+      const [row] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(agentRuns)
+        .where(and(...baseConditions));
+      activeAgentCount = row?.count ?? 0;
+    }
   } catch {
     // DB unreachable — leave null so the Nav hides the indicator.
   }
 
   return (
     <>
-      <Nav activeAgentCount={activeAgentCount} />
+      <Nav
+        activeAgentCount={activeAgentCount}
+        isAdmin={viewer?.role === "admin"}
+      />
       {children}
     </>
   );
