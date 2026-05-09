@@ -46,8 +46,10 @@ export function CrmSidebar({
     <aside className="crm-sb">
       <div className="crm-sb-top">
         <CrmSearchBox initial={searchValue} />
-        <NewClientButton />
-        <AskCrm />
+        <div className="crm-sb-actions">
+          <NewClientButton />
+          <AskCrm />
+        </div>
       </div>
       <ClientFilters active={activeFilter} />
       <div className="client-list">
