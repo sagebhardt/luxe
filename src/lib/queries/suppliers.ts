@@ -1,7 +1,8 @@
 import "server-only";
-import { and, asc, desc, eq, ilike, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, isNotNull, sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { suppliers, type supplierKind, type priceTier } from "@/lib/db/schema";
+import { embedText } from "@/lib/ai/embeddings";
 
 export type SupplierKind = (typeof supplierKind.enumValues)[number];
 export type PriceTier = (typeof priceTier.enumValues)[number];
@@ -60,10 +61,10 @@ export async function getSupplier(id: string) {
 }
 
 /**
- * Curated short list for an agent prompt: top N preferred suppliers
- * matching the destination/kind, ordered by preferred → virtuoso →
- * name. Used by hotel/dining/itinerary agents to ground proposals
- * in Odylic's actual supplier relationships.
+ * Curated short list for an agent prompt: top N suppliers matching
+ * the destination/kind. Hybrid: structured destination filter, then
+ * preferred → virtuoso → name. Used by hotel/dining/itinerary agents
+ * to ground proposals in Odylic's actual supplier relationships.
  */
 export async function suggestSuppliersForAgent(opts: {
   kind: SupplierKind;
@@ -89,6 +90,61 @@ export async function suggestSuppliersForAgent(opts: {
       asc(suppliers.name),
     )
     .limit(opts.limit ?? 5);
+}
+
+/**
+ * Semantic search via pgvector cosine distance. Used for fuzzy
+ * intent ("wellness retreat with kaiseki dining") that doesn't
+ * line up cleanly with structured filters. Falls back to no
+ * results if no suppliers have embeddings yet — caller should
+ * use suggestSuppliersForAgent or listSuppliers as a structured
+ * fallback.
+ */
+export async function searchSuppliersByQuery(opts: {
+  query: string;
+  kind?: SupplierKind;
+  preferredOnly?: boolean;
+  limit?: number;
+}): Promise<Array<SupplierRow & { distance: number }>> {
+  if (!opts.query.trim()) return [];
+  const queryEmbedding = await embedText(opts.query);
+  /* Format pgvector literal: "[0.1,0.2,...]" */
+  const queryVec = `[${queryEmbedding.join(",")}]`;
+
+  const conditions: SQL[] = [isNotNull(suppliers.embedding)];
+  if (opts.kind) conditions.push(eq(suppliers.kind, opts.kind));
+  if (opts.preferredOnly) conditions.push(eq(suppliers.preferred, true));
+
+  /* Cosine distance via the <=> operator (vector_cosine_ops). Lower =
+   * more similar. We return distance so callers can threshold or
+   * blend with other ranking signals. */
+  const rows = await db
+    .select({
+      id: suppliers.id,
+      name: suppliers.name,
+      kind: suppliers.kind,
+      city: suppliers.city,
+      country: suppliers.country,
+      region: suppliers.region,
+      priceTier: suppliers.priceTier,
+      amenities: suppliers.amenities,
+      notes: suppliers.notes,
+      preferred: suppliers.preferred,
+      virtuoso: suppliers.virtuoso,
+      commissionPct: suppliers.commissionPct,
+      contact: suppliers.contact,
+      website: suppliers.website,
+      embedding: suppliers.embedding,
+      embeddingUpdatedAt: suppliers.embeddingUpdatedAt,
+      createdAt: suppliers.createdAt,
+      updatedAt: suppliers.updatedAt,
+      distance: sql<number>`${suppliers.embedding} <=> ${queryVec}::vector`,
+    })
+    .from(suppliers)
+    .where(and(...conditions))
+    .orderBy(sql`${suppliers.embedding} <=> ${queryVec}::vector`)
+    .limit(opts.limit ?? 8);
+  return rows;
 }
 
 export type SupplierRow = typeof suppliers.$inferSelect;

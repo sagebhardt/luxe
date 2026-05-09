@@ -20,6 +20,25 @@ const bytea = customType<{ data: Buffer; default: false }>({
   },
 });
 
+/* pgvector column for semantic similarity search. Stored as
+ * "[0.1,0.2,...]" string on the wire; the JS side sees number[]. */
+const vector = (dim: number) =>
+  customType<{ data: number[]; driverData: string; default: false }>({
+    dataType() {
+      return `vector(${dim})`;
+    },
+    toDriver(value: number[]): string {
+      return `[${value.join(",")}]`;
+    },
+    fromDriver(value: string): number[] {
+      /* pgvector wire format: "[0.1,0.2,...]" */
+      return value
+        .replace(/^\[|\]$/g, "")
+        .split(",")
+        .map((s) => Number(s));
+    },
+  });
+
 /* -----------------------------------------------------------------
  * Enums
  * ----------------------------------------------------------------- */
@@ -294,6 +313,12 @@ export const suppliers = pgTable(
     contact: text(),
     /** Public URL for the supplier (for the operator's reference). */
     website: text(),
+    /** Embedding of (name + city + country + amenities + notes),
+     * computed via Vertex text-multilingual-embedding-002 (768 dim).
+     * Null when content hasn't been embedded yet — agents fall back
+     * to structured filters in that case. */
+    embedding: vector(768)("embedding"),
+    embeddingUpdatedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },

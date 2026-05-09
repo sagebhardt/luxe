@@ -5,6 +5,30 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { suppliers, priceTier, supplierKind } from "@/lib/db/schema";
 import { AuthError, requireAdmin } from "@/lib/auth";
+import { embedText, supplierEmbeddingText } from "@/lib/ai/embeddings";
+
+/* Best-effort embedding: failures don't block the CRUD operation —
+ * the row gets stored without an embedding and the next edit will
+ * re-attempt. The agent prompts still surface preferred suppliers
+ * via structured filters when no embedding is available. */
+async function tryEmbed(s: {
+  name: string;
+  kind: string;
+  city: string | null;
+  country: string | null;
+  region: string | null;
+  amenities: string[];
+  notes: string | null;
+}): Promise<{ embedding: number[]; embeddingUpdatedAt: Date } | null> {
+  try {
+    const text = supplierEmbeddingText(s);
+    const embedding = await embedText(text);
+    return { embedding, embeddingUpdatedAt: new Date() };
+  } catch (err) {
+    console.error("supplier embedding failed", err);
+    return null;
+  }
+}
 
 const SUPPLIER_KINDS = supplierKind.enumValues;
 const PRICE_TIERS = priceTier.enumValues;
@@ -52,23 +76,40 @@ export async function createSupplierAction(
       : null;
 
     const commissionRaw = String(formData.get("commissionPct") ?? "").trim();
+    const city = String(formData.get("city") ?? "").trim() || null;
+    const country = String(formData.get("country") ?? "").trim() || null;
+    const region = String(formData.get("region") ?? "").trim() || null;
+    const amenities = parseAmenities(String(formData.get("amenities") ?? ""));
+    const notes = String(formData.get("notes") ?? "").trim() || null;
+
+    const embed = await tryEmbed({
+      name,
+      kind: kindRaw,
+      city,
+      country,
+      region,
+      amenities,
+      notes,
+    });
 
     const [row] = await db
       .insert(suppliers)
       .values({
         name,
         kind: kindRaw as (typeof SUPPLIER_KINDS)[number],
-        city: String(formData.get("city") ?? "").trim() || null,
-        country: String(formData.get("country") ?? "").trim() || null,
-        region: String(formData.get("region") ?? "").trim() || null,
+        city,
+        country,
+        region,
         priceTier,
-        amenities: parseAmenities(String(formData.get("amenities") ?? "")),
-        notes: String(formData.get("notes") ?? "").trim() || null,
+        amenities,
+        notes,
         preferred: formData.get("preferred") === "on",
         virtuoso: formData.get("virtuoso") === "on",
         commissionPct: commissionRaw ? parsePct(commissionRaw) : null,
         contact: String(formData.get("contact") ?? "").trim() || null,
         website: String(formData.get("website") ?? "").trim() || null,
+        embedding: embed?.embedding ?? null,
+        embeddingUpdatedAt: embed?.embeddingUpdatedAt ?? null,
       })
       .returning({ id: suppliers.id });
 
@@ -93,25 +134,46 @@ export async function updateSupplierAction(
       ? (tierRaw as (typeof PRICE_TIERS)[number])
       : null;
     const commissionRaw = String(formData.get("commissionPct") ?? "").trim();
+    const name = String(formData.get("name") ?? "").trim();
+    const kindRaw = String(
+      formData.get("kind") ?? "other",
+    ) as (typeof SUPPLIER_KINDS)[number];
+    const city = String(formData.get("city") ?? "").trim() || null;
+    const country = String(formData.get("country") ?? "").trim() || null;
+    const region = String(formData.get("region") ?? "").trim() || null;
+    const amenities = parseAmenities(String(formData.get("amenities") ?? ""));
+    const notes = String(formData.get("notes") ?? "").trim() || null;
+
+    /* Re-embed on update — fields that affect the embedding may have
+     * changed and we want the vector to track the row. */
+    const embed = await tryEmbed({
+      name,
+      kind: kindRaw,
+      city,
+      country,
+      region,
+      amenities,
+      notes,
+    });
 
     await db
       .update(suppliers)
       .set({
-        name: String(formData.get("name") ?? "").trim(),
-        kind: String(
-          formData.get("kind") ?? "other",
-        ) as (typeof SUPPLIER_KINDS)[number],
-        city: String(formData.get("city") ?? "").trim() || null,
-        country: String(formData.get("country") ?? "").trim() || null,
-        region: String(formData.get("region") ?? "").trim() || null,
+        name,
+        kind: kindRaw,
+        city,
+        country,
+        region,
         priceTier,
-        amenities: parseAmenities(String(formData.get("amenities") ?? "")),
-        notes: String(formData.get("notes") ?? "").trim() || null,
+        amenities,
+        notes,
         preferred: formData.get("preferred") === "on",
         virtuoso: formData.get("virtuoso") === "on",
         commissionPct: commissionRaw ? parsePct(commissionRaw) : null,
         contact: String(formData.get("contact") ?? "").trim() || null,
         website: String(formData.get("website") ?? "").trim() || null,
+        embedding: embed?.embedding ?? null,
+        embeddingUpdatedAt: embed?.embeddingUpdatedAt ?? null,
         updatedAt: new Date(),
       })
       .where(eq(suppliers.id, id));
