@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   agentDecisions,
@@ -10,6 +10,7 @@ import {
   travelerPreferences,
   tripAlerts,
   trips,
+  tripShareTokens,
 } from "@/lib/db/schema";
 
 export type SidebarTrip = {
@@ -188,6 +189,19 @@ export async function getTripBudget(
   ];
 
   return { budgetCents: budget, categories: cats, remainingCents: remaining };
+}
+
+export async function listActiveShareTokens(tripId: string) {
+  return db
+    .select()
+    .from(tripShareTokens)
+    .where(
+      and(
+        eq(tripShareTokens.tripId, tripId),
+        isNull(tripShareTokens.revokedAt),
+      ),
+    )
+    .orderBy(desc(tripShareTokens.createdAt));
 }
 
 // Light helper for relations import preservation

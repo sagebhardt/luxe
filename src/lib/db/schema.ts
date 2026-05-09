@@ -102,7 +102,11 @@ export const activityType = pgEnum("activity_type", [
   "trip_event",
 ]);
 
-export const logAvatar = pgEnum("log_avatar", ["orchestrator", "sub_agent"]);
+export const logAvatar = pgEnum("log_avatar", [
+  "orchestrator",
+  "sub_agent",
+  "client",
+]);
 
 export const insightKind = pgEnum("insight_kind", [
   "next_trip_signal",
@@ -305,6 +309,22 @@ export const outreachDrafts = pgTable(
   (t) => [index("outreach_drafts_client_idx").on(t.clientId, t.createdAt)],
 );
 
+export const tripShareTokens = pgTable(
+  "trip_share_tokens",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    tripId: uuid()
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    token: text().notNull().unique(),
+    label: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    revokedAt: timestamp({ withTimezone: true }),
+    lastVisitedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [index("trip_share_tokens_trip_idx").on(t.tripId)],
+);
+
 export const tripAlerts = pgTable(
   "trip_alerts",
   {
@@ -433,6 +453,16 @@ export const outreachDraftsRelations = relations(
 export const tripAlertsRelations = relations(tripAlerts, ({ one }) => ({
   trip: one(trips, { fields: [tripAlerts.tripId], references: [trips.id] }),
 }));
+
+export const tripShareTokensRelations = relations(
+  tripShareTokens,
+  ({ one }) => ({
+    trip: one(trips, {
+      fields: [tripShareTokens.tripId],
+      references: [trips.id],
+    }),
+  }),
+);
 
 export const modelProvidersRelations = relations(
   modelProviders,

@@ -4,6 +4,9 @@ const isPublic = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/health",
+  /* Token-gated client trip summaries — token validation happens
+   * inside the route handler, not at middleware level. */
+  "/share/(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

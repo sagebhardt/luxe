@@ -9,9 +9,19 @@ export function AgentLog({ messages }: { messages: Message[] }) {
       {messages.map((m) => (
         <div key={m.id} className="msg">
           <div
-            className={`msg-av ${m.avatar === "orchestrator" ? "av-ag" : "av-sys"}`}
+            className={`msg-av ${
+              m.avatar === "orchestrator"
+                ? "av-ag"
+                : m.avatar === "client"
+                  ? "av-client"
+                  : "av-sys"
+            }`}
           >
-            {m.avatar === "orchestrator" ? "✦" : "⚙"}
+            {m.avatar === "orchestrator"
+              ? "✦"
+              : m.avatar === "client"
+                ? "·"
+                : "⚙"}
           </div>
           <div className="msg-body">
             <div

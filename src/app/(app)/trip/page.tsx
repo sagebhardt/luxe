@@ -13,6 +13,7 @@ import {
   getDefaultTripId,
   getTripBudget,
   getTripDetail,
+  listActiveShareTokens,
   listSidebarTrips,
 } from "@/lib/queries/trips";
 
@@ -29,10 +30,11 @@ export default async function TripPage({
   const tripId = idParam ?? (await getDefaultTripId());
   if (!tripId) notFound();
 
-  const [trip, sidebar, budget] = await Promise.all([
+  const [trip, sidebar, budget, shareTokens] = await Promise.all([
     getTripDetail(tripId),
     listSidebarTrips(),
     getTripBudget(tripId),
+    listActiveShareTokens(tripId),
   ]);
   if (!trip) notFound();
 
@@ -56,7 +58,11 @@ export default async function TripPage({
         />
 
         <main className="trip-main">
-          <TripHero trip={trip} client={trip.client} />
+          <TripHero
+            trip={trip}
+            client={trip.client}
+            shareTokens={shareTokens}
+          />
           <div className="section-divider" />
 
           <div className="sec-lbl">Agent Pipeline</div>
