@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ClientFilters } from "./ClientFilters";
 import { CrmSearchBox } from "./CrmSearchBox";
+import { AskCrm } from "./AskCrm";
 import { formatMoneyShort } from "@/lib/format";
 import type { ClientFilter } from "@/lib/queries/clients";
 import type { clients as clientsTable } from "@/lib/db/schema";
@@ -44,12 +45,7 @@ export function CrmSidebar({
     <aside className="crm-sb">
       <div className="crm-sb-top">
         <CrmSearchBox initial={searchValue} />
-        <button
-          className="btn btn-forest"
-          style={{ padding: "8px 14px", whiteSpace: "nowrap", fontSize: 11 }}
-        >
-          + New
-        </button>
+        <AskCrm />
       </div>
       <ClientFilters active={activeFilter} />
       <div className="client-list">
