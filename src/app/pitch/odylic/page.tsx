@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
 import { HeroAgentTicker } from "@/components/pitch/HeroAgentTicker";
+import {
+  TripWorkspaceMockup,
+  CrmIntelligenceMockup,
+  PipelineMockup,
+  DocumentVaultMockup,
+  ReportsMockup,
+} from "@/components/pitch/ProductMockups";
+import { PITCH_IMAGES, unsplashUrl } from "@/components/pitch/images";
 
 export const metadata: Metadata = {
   title: "Luxe × Odylic — Una plataforma agéntica para travel designers",
@@ -39,7 +47,29 @@ export default function OdylicPitchPage() {
         </div>
       </section>
 
-      <Divider />
+      {/* -------------------------------------------------- IMAGE COLLAGE */}
+      <section className="pitch-collage" aria-hidden="true">
+        <div
+          className="pitch-collage-img tall"
+          style={{ backgroundImage: `url(${unsplashUrl(PITCH_IMAGES.blossoms, { w: 900, h: 1200 })})` }}
+        />
+        <div
+          className="pitch-collage-img"
+          style={{ backgroundImage: `url(${unsplashUrl(PITCH_IMAGES.safari, { w: 900, h: 600 })})` }}
+        />
+        <div
+          className="pitch-collage-img"
+          style={{ backgroundImage: `url(${unsplashUrl(PITCH_IMAGES.tropical, { w: 900, h: 600 })})` }}
+        />
+        <div
+          className="pitch-collage-img"
+          style={{ backgroundImage: `url(${unsplashUrl(PITCH_IMAGES.marrakech, { w: 900, h: 600 })})` }}
+        />
+        <div
+          className="pitch-collage-img tall"
+          style={{ backgroundImage: `url(${unsplashUrl(PITCH_IMAGES.mountains, { w: 900, h: 1200 })})` }}
+        />
+      </section>
 
       {/* -------------------------------------------------- PROBLEM */}
       <Section number="01" eyebrow="El estado actual">
@@ -79,39 +109,9 @@ export default function OdylicPitchPage() {
           haga click en aprobar.
         </p>
 
-        <div className="pitch-mock pitch-mock-agentlog">
-          <div className="pitch-mock-label">Trip workspace · agent log</div>
-          <ul className="pitch-mock-log">
-            <li>
-              <span className="pml-avatar pml-orch">✦</span>
-              <span className="pml-body">
-                <em>Hotel Agent</em> recomienda{" "}
-                <em>Aman Tokyo, Suite Premier Deluxe</em> sobre 3 alternativas
-                — el cliente prefiere chains boutique, pidió piscina interior,
-                budget cómodo en este rango.
-              </span>
-              <span className="pml-time">14:23</span>
-            </li>
-            <li>
-              <span className="pml-avatar pml-sub">⚙</span>
-              <span className="pml-body">
-                <em>Flight Agent</em> propone <em>JL011 + JL010</em> en F
-                clase, escalas mínimas, llegada matinal en Narita para tu
-                preferencia de check-in temprano.
-              </span>
-              <span className="pml-time">14:24</span>
-            </li>
-            <li className="pml-pending">
-              <span className="pml-avatar pml-orch">✦</span>
-              <span className="pml-body">
-                Esperando aprobación de la ITD para confirmar reserva.
-              </span>
-              <span className="pml-time">14:24</span>
-            </li>
-          </ul>
-        </div>
+        <TripWorkspaceMockup />
 
-        <p className="pitch-body">
+        <p className="pitch-body" style={{ marginTop: "32px" }}>
           La ITD lee, ajusta, aprueba. El agente emite la confirmación, lo
           registra en el itinerario, lo suma al presupuesto comprometido, y
           actualiza el activity log del cliente. Todo lo que solía vivir en
@@ -119,6 +119,11 @@ export default function OdylicPitchPage() {
           compartible.
         </p>
       </Section>
+
+      <ImageBand src={unsplashUrl(PITCH_IMAGES.desert, { w: 2000, h: 700 })}>
+        <em>"En Odylic, el lujo está en la sutileza de los detalles, en
+        la confidencialidad absoluta, en el acceso a lo inaccesible."</em>
+      </ImageBand>
 
       {/* -------------------------------------------------- ITD VIEW */}
       <Section number="03" eyebrow="Para la ITD">
@@ -151,6 +156,8 @@ export default function OdylicPitchPage() {
           </p>
         </FeatureCard>
 
+        <CrmIntelligenceMockup />
+
         <FeatureCard title="Compositor de outreach con voz consistente.">
           <p>
             "Escribe a Marcela proponiendo Marruecos en octubre, mencionando
@@ -171,6 +178,8 @@ export default function OdylicPitchPage() {
             pasaportes nunca más se vencen entre las grietas.
           </p>
         </FeatureCard>
+
+        <DocumentVaultMockup />
 
         <FeatureCard title="Propuestas editoriales en un click.">
           <p>
@@ -195,13 +204,19 @@ export default function OdylicPitchPage() {
         </FeatureCard>
       </Section>
 
+      <ImageBand src={unsplashUrl(PITCH_IMAGES.hotel, { w: 2000, h: 700 })}>
+        <em>"Acceso a lo inaccesible. Perfección invisible."</em>
+      </ImageBand>
+
       {/* -------------------------------------------------- ODYLIC VIEW */}
       <Section number="04" eyebrow="Para Odylic">
         <h2 className="pitch-h2">
           Una vista del negocio, no <em>una suma de Excels</em>.
         </h2>
 
-        <div className="pitch-grid-3">
+        <PipelineMockup />
+
+        <div className="pitch-grid-3" style={{ marginTop: "32px" }}>
           <BulletCard
             label="Pipeline de cartera"
             body="Kanban en vivo de cada cliente: lead, discovery, proposing, booked, traveling, returning. Sabes en qué etapa está cada relación de cada ITD, sin pedir reportes."
@@ -227,7 +242,18 @@ export default function OdylicPitchPage() {
             body="Cada ITD ve sólo su cartera. Cada cliente pertenece a un dueño. Odylic ve todo. Las fronteras se respetan; la inteligencia colectiva no."
           />
         </div>
+
+        <div style={{ marginTop: "48px" }}>
+          <h3 className="pitch-h3" style={{ marginBottom: "20px" }}>
+            Reportes en la moneda de Odylic, FX-correcto.
+          </h3>
+          <ReportsMockup />
+        </div>
       </Section>
+
+      <ImageBand src={unsplashUrl(PITCH_IMAGES.ocean, { w: 2000, h: 700 })}>
+        <em>"Diseñemos viajes extraordinarios juntos."</em>
+      </ImageBand>
 
       {/* -------------------------------------------------- WHY NOT */}
       <Section number="05" eyebrow="Por qué no usar Luxe sería un error">
@@ -340,7 +366,12 @@ export default function OdylicPitchPage() {
       </Section>
 
       {/* -------------------------------------------------- CLOSE */}
-      <section className="pitch-close">
+      <section
+        className="pitch-close"
+        style={{
+          backgroundImage: `linear-gradient(rgba(45,64,56,0.90), rgba(45,64,56,0.92)), url(${unsplashUrl(PITCH_IMAGES.nature, { w: 2400, h: 1400 })})`,
+        }}
+      >
         <div className="pitch-close-mark">O</div>
         <p className="pitch-close-line">
           <em>
@@ -429,4 +460,23 @@ function RoiRow({
 
 function Divider() {
   return <div className="pitch-divider" aria-hidden />;
+}
+
+function ImageBand({
+  src,
+  children,
+}: {
+  src: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <section
+      className="pitch-imageband"
+      style={{ backgroundImage: `url(${src})` }}
+    >
+      <div className="pitch-imageband-inner">
+        {children ? <p className="pitch-imageband-quote">{children}</p> : null}
+      </div>
+    </section>
+  );
 }

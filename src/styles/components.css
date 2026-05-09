@@ -5716,3 +5716,753 @@
   background: rgba(45, 64, 56, 0.12);
   color: var(--forest);
 }
+
+/* ============================================================
+   PITCH — image collage strip
+   ============================================================ */
+
+.pitch-collage {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 0 64px;
+  max-width: 1400px;
+  margin: 0 auto 64px;
+  height: 280px;
+}
+
+.pitch-collage-img {
+  background-size: cover;
+  background-position: center;
+  border-radius: 6px;
+  filter: saturate(1.05);
+  transition: transform 0.6s ease;
+}
+
+.pitch-collage-img:hover {
+  transform: scale(1.02);
+}
+
+.pitch-collage-img.tall {
+  grid-row: span 1;
+}
+
+@media (max-width: 900px) {
+  .pitch-collage {
+    grid-template-columns: 1fr 1fr;
+    height: auto;
+    padding: 0 28px;
+  }
+  .pitch-collage-img {
+    height: 200px;
+  }
+}
+
+/* ============================================================
+   PITCH — image bands (full-width mood/quote photos)
+   ============================================================ */
+
+.pitch-imageband {
+  position: relative;
+  height: 380px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pitch-imageband::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(30, 26, 20, 0.4) 0%,
+    rgba(30, 26, 20, 0.55) 100%
+  );
+}
+
+.pitch-imageband-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 920px;
+  padding: 0 64px;
+  text-align: center;
+}
+
+.pitch-imageband-quote {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 30px;
+  color: var(--ivory);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.pitch-imageband-quote em {
+  color: var(--ivory);
+}
+
+@media (max-width: 900px) {
+  .pitch-imageband {
+    height: 280px;
+  }
+  .pitch-imageband-quote {
+    font-size: 22px;
+  }
+  .pitch-imageband-inner {
+    padding: 0 28px;
+  }
+}
+
+/* ============================================================
+   PITCH — product mockups (showcase the actual app surfaces)
+   ============================================================ */
+
+.mock-frame {
+  background: var(--warm-white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 30px 60px -30px rgba(45, 64, 56, 0.25),
+    0 4px 0 rgba(45, 64, 56, 0.04);
+  margin: 36px 0;
+}
+
+.mock-window {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-lt);
+  background: var(--ivory);
+}
+
+.mock-window span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--parchment);
+}
+
+.mock-window span:nth-child(1) {
+  background: #e0a3a3;
+}
+.mock-window span:nth-child(2) {
+  background: #d9c082;
+}
+.mock-window span:nth-child(3) {
+  background: var(--sage);
+}
+
+.mock-url {
+  margin-left: 12px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--stone-lt);
+  font-feature-settings: "tnum";
+}
+
+.mock-body {
+  padding: 28px 32px;
+}
+
+.mock-body-row {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 36px;
+}
+
+@media (max-width: 800px) {
+  .mock-body-row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+.mock-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--bark);
+  margin-bottom: 6px;
+}
+
+.mock-trip-h {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 28px;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+.mock-trip-meta {
+  font-size: 12px;
+  color: var(--charcoal);
+}
+
+.mock-trip-meta em {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  color: var(--bark);
+  font-size: 14px;
+}
+
+.mock-margin {
+  color: var(--forest);
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+}
+
+.mock-divider {
+  height: 1px;
+  background: var(--bark);
+  opacity: 0.5;
+  margin: 18px 0 22px;
+}
+
+.mock-sec-lbl {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  margin-bottom: 12px;
+}
+
+/* -------- agent cards -------- */
+
+.mock-agents {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.mock-agent {
+  background: var(--ivory);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 14px;
+  position: relative;
+}
+
+.mock-agent.done {
+  opacity: 0.78;
+}
+
+.mock-agent.running {
+  border-color: var(--sage);
+  background: var(--warm-white);
+  position: relative;
+  overflow: hidden;
+}
+
+.mock-agent.running::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--sage) 30%,
+    var(--sage) 70%,
+    transparent
+  );
+  animation: hero-ticker-scan 2.2s linear infinite;
+}
+
+.mock-agent.wait {
+  opacity: 0.4;
+}
+
+.mock-agent-icon {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--forest);
+  margin-bottom: 8px;
+}
+
+.mock-agent-name {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--bark);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.mock-agent-state {
+  font-size: 11px;
+  color: var(--charcoal);
+  line-height: 1.4;
+}
+
+@media (max-width: 700px) {
+  .mock-agents {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* -------- approval banner -------- */
+
+.mock-approve {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 18px 22px;
+  background: rgba(196, 168, 130, 0.12);
+  border: 1px solid rgba(196, 168, 130, 0.45);
+  border-radius: 8px;
+}
+
+.mock-approve-l {
+  flex: 1;
+}
+
+.mock-approve-eb {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--bark);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.mock-approve-h {
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.mock-approve-h em {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  color: var(--forest);
+}
+
+.mock-approve-rat {
+  font-size: 11px;
+  color: var(--charcoal);
+  line-height: 1.5;
+}
+
+.mock-approve-btn {
+  background: var(--forest);
+  color: var(--ivory);
+  border: none;
+  border-radius: 5px;
+  padding: 10px 18px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* -------- CRM mockup -------- */
+
+.mock-avatar-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--forest);
+  color: var(--ivory);
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.mock-client-h {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+.mock-client-tags {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.mock-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--ivory);
+  border: 1px solid var(--border);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--stone);
+}
+
+.mock-pill-vip {
+  background: var(--forest);
+  color: var(--ivory);
+  border-color: var(--forest);
+}
+
+.mock-kpi-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.mock-kpi {
+  background: var(--ivory);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.mock-kpi-lbl {
+  font-size: 8px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  margin-bottom: 4px;
+}
+
+.mock-kpi-val {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--forest);
+}
+
+.mock-rp-lbl {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  margin-bottom: 12px;
+}
+
+.mock-insight {
+  background: var(--ivory);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--bark);
+}
+
+.insight-signal {
+  border-left-color: var(--sage);
+}
+
+.insight-spend {
+  border-left-color: var(--bark);
+}
+
+.insight-risk {
+  border-left-color: var(--rust);
+}
+
+.mock-insight-tag {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  margin-bottom: 6px;
+}
+
+.mock-insight-body {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--charcoal);
+}
+
+.mock-insight-body em {
+  color: var(--ink);
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* -------- pipeline mockup -------- */
+
+.mock-pipeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.mock-pl-col {
+  background: var(--ivory);
+  border-radius: 8px;
+  padding: 14px 12px;
+  border: 1px solid var(--border-lt);
+  min-height: 220px;
+}
+
+.mock-pl-head {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--bark);
+  margin-bottom: 14px;
+}
+
+.mock-pl-card {
+  background: var(--warm-white);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.mock-pl-card.hl {
+  border-color: var(--forest);
+  box-shadow: 0 0 0 1px var(--forest);
+}
+
+.mock-pl-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+
+.mock-pl-note {
+  font-size: 10px;
+  color: var(--stone);
+}
+
+@media (max-width: 800px) {
+  .mock-pipeline {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* -------- document mockup -------- */
+
+.mock-doc {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 16px;
+  padding: 18px 20px;
+  background: var(--ivory);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.mock-doc-kind {
+  background: var(--forest);
+  color: var(--ivory);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  padding: 8px 10px;
+  border-radius: 5px;
+  text-align: center;
+  height: max-content;
+}
+
+.mock-doc-name {
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.mock-doc-summary {
+  font-size: 12px;
+  color: var(--charcoal);
+  margin-bottom: 10px;
+}
+
+.mock-doc-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mock-field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--warm-white);
+  border: 1px solid var(--border-lt);
+  font-size: 11px;
+}
+
+.mock-field-l {
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+}
+
+.mock-field-v {
+  color: var(--ink);
+}
+
+.mock-field-warn {
+  border-color: var(--rust);
+  background: rgba(158, 91, 58, 0.08);
+}
+
+.mock-field-warn .mock-field-v {
+  color: var(--rust);
+  font-style: italic;
+}
+
+.mock-doc-mini {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 16px;
+  padding: 14px 20px;
+  background: var(--ivory);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.mock-doc-mini-kind {
+  background: var(--bark);
+  color: var(--ivory);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  padding: 8px 10px;
+  border-radius: 5px;
+  text-align: center;
+  height: max-content;
+}
+
+.mock-doc-mini-name {
+  font-size: 12px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.mock-doc-mini-meta {
+  font-size: 11px;
+  color: var(--charcoal);
+}
+
+/* -------- reports mockup -------- */
+
+.mock-reports-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.mock-rp-kpi {
+  background: var(--ivory);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.mock-rp-kpi.accent {
+  background: var(--warm-white);
+  border-color: var(--forest-border);
+}
+
+.mock-rp-kpi-lbl {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  margin-bottom: 6px;
+}
+
+.mock-rp-kpi-val {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--ink);
+}
+
+.mock-rp-kpi.accent .mock-rp-kpi-val {
+  color: var(--forest);
+}
+
+.mock-rp-kpi-note {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  margin-top: 3px;
+}
+
+.mock-rp-table {
+  background: var(--ivory);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mock-rp-row {
+  display: grid;
+  grid-template-columns: 1fr 60px 100px 100px 60px;
+  gap: 10px;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--border-lt);
+  font-size: 12px;
+  color: var(--charcoal);
+  align-items: baseline;
+}
+
+.mock-rp-row:last-child {
+  border-bottom: none;
+}
+
+.mock-rp-row.mock-rp-head {
+  background: var(--warm-white);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stone-lt);
+  font-weight: 500;
+}
+
+.mock-rp-row .num {
+  text-align: right;
+  font-feature-settings: "tnum";
+}
+
+.mock-rp-row em {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  color: var(--forest);
+  font-size: 14px;
+}
+
+@media (max-width: 800px) {
+  .mock-reports-strip {
+    grid-template-columns: 1fr 1fr;
+  }
+  .mock-rp-row {
+    grid-template-columns: 1fr 50px 80px 80px 50px;
+    font-size: 11px;
+  }
+}
