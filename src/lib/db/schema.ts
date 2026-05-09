@@ -181,6 +181,11 @@ export const trips = pgTable(
     committedCents: integer().notNull().default(0),
     status: tripStatus().notNull().default("draft"),
     summary: text(),
+    /* Client-facing editorial narrative used by the public share page.
+     * Shape lives in src/lib/types/narrative.ts. Null until the
+     * operator clicks Generate narrative. */
+    clientNarrative: jsonb(),
+    clientNarrativeGeneratedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },

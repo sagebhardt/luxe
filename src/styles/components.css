@@ -337,6 +337,61 @@
   gap: 24px;
 }
 
+.trip-hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.narrative-btn-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.narrative-btn {
+  background: transparent;
+  color: var(--bark);
+  border: 1px solid rgba(196, 168, 130, 0.4);
+  border-radius: 5px;
+  padding: 8px 14px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.narrative-btn:hover:not(:disabled) {
+  background: rgba(196, 168, 130, 0.12);
+}
+
+.narrative-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.narrative-stamp {
+  font-size: 9px;
+  color: var(--stone-lt);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.narrative-err {
+  font-size: 9px;
+  color: var(--rust);
+  max-width: 200px;
+  text-align: right;
+  line-height: 1.4;
+}
+
 .share-btn-wrap {
   position: relative;
   flex-shrink: 0;
@@ -1124,46 +1179,141 @@
 .share-main {
   max-width: 760px;
   margin: 0 auto;
-  padding: 56px 32px 80px;
+  padding: 80px 32px 80px;
 }
 
 .share-hero {
-  margin-bottom: 48px;
+  margin-bottom: 40px;
   text-align: center;
-  animation: fadeUp 0.6s var(--ease) both;
+  animation: fadeUp 0.7s var(--ease) both;
 }
 
 .share-eyebrow {
   font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.24em;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
   color: var(--bark);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .share-title {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 400;
-  font-size: 56px;
-  line-height: 1.05;
+  font-size: 64px;
+  line-height: 1.02;
   color: var(--forest);
-  letter-spacing: -0.01em;
-  margin: 0 0 14px;
+  letter-spacing: -0.015em;
+  margin: 0 0 18px;
+}
+
+.share-rule {
+  width: 36px;
+  height: 1px;
+  background: var(--bark);
+  margin: 0 auto 18px;
+  opacity: 0.7;
 }
 
 .share-meta {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--stone);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 22px;
+}
+
+.share-countdown {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--warm-white);
+  border: 1px solid var(--border-lt);
+  border-radius: 999px;
+}
+
+.share-countdown-num {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--forest);
+}
+
+.share-countdown-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--stone);
+}
+
+.share-opening {
+  max-width: 580px;
+  margin: 0 auto 24px;
+  animation: fadeUp 0.7s 0.08s var(--ease) both;
+}
+
+.share-opening-body {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.55;
+  color: var(--charcoal);
+  text-align: center;
+  font-weight: 400;
+}
+
+.share-dropcap {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 64px;
+  line-height: 0.85;
+  color: var(--forest);
+  float: left;
+  margin: 6px 8px 0 0;
+}
+
+.share-divider {
+  width: 100%;
+  max-width: 200px;
+  height: 1px;
+  margin: 36px auto;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(196, 168, 130, 0.6),
+    transparent
+  );
 }
 
 .share-section {
-  margin-bottom: 48px;
-  animation: fadeUp 0.6s 0.06s var(--ease) both;
+  margin-bottom: 28px;
+  animation: fadeUp 0.6s 0.1s var(--ease) both;
 }
 
+.share-section-eyebrow {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--bark);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.share-section-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 32px;
+  color: var(--forest);
+  text-align: center;
+  margin: 0 0 26px;
+  letter-spacing: -0.005em;
+}
+
+/* Legacy class — keep for backward-compat with any cached HTML */
 .share-section-label {
   font-size: 10px;
   font-weight: 500;
@@ -1221,8 +1371,30 @@
 .share-day {
   display: grid;
   grid-template-columns: 80px 1fr;
-  gap: 0 24px;
-  margin-bottom: 28px;
+  gap: 0 28px;
+  margin-bottom: 32px;
+}
+
+.share-day-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.share-day-theme {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 19px;
+  color: var(--forest);
+  margin-bottom: 2px;
+}
+
+.share-day-blurb {
+  font-size: 13px;
+  color: var(--charcoal);
+  line-height: 1.65;
+  margin: 0 0 6px;
+  max-width: 460px;
 }
 
 .share-day-lbl {
@@ -1313,6 +1485,57 @@
   text-align: center;
   line-height: 1.7;
   max-width: 520px;
+  margin: 0 auto;
+}
+
+.share-pre-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.share-pre-card {
+  background: var(--warm-white);
+  border: 1px solid var(--border-lt);
+  border-radius: 8px;
+  padding: 18px 22px;
+}
+
+.share-pre-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--bark);
+  margin-bottom: 8px;
+}
+
+.share-pre-body {
+  font-size: 12px;
+  color: var(--charcoal);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.share-close {
+  text-align: center;
+}
+
+.share-closing {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--charcoal);
+  max-width: 540px;
+  margin: 0 auto 28px;
+}
+
+.share-close .share-chat {
+  text-align: left;
+  max-width: 600px;
   margin: 0 auto;
 }
 

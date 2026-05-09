@@ -2,6 +2,7 @@ import Link from "next/link";
 import { formatDateRange, formatMoney, pct } from "@/lib/format";
 import type { trips, clients, tripShareTokens } from "@/lib/db/schema";
 import { ShareTripButton } from "./ShareTripButton";
+import { GenerateNarrativeButton } from "./GenerateNarrativeButton";
 
 type Trip = typeof trips.$inferSelect;
 type Client = typeof clients.$inferSelect;
@@ -36,7 +37,13 @@ export function TripHero({
             <em>{committedPct}%</em> committed
           </div>
         </div>
-        <ShareTripButton tripId={trip.id} existingTokens={shareTokens} />
+        <div className="trip-hero-actions">
+          <GenerateNarrativeButton
+            tripId={trip.id}
+            generatedAt={trip.clientNarrativeGeneratedAt}
+          />
+          <ShareTripButton tripId={trip.id} existingTokens={shareTokens} />
+        </div>
       </div>
     </div>
   );

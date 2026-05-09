@@ -36,6 +36,13 @@
       "when": 1778313569179,
       "tag": "0004_famous_clea",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778315365745,
+      "tag": "0005_skinny_mentor",
+      "breakpoints": true
     }
   ]
 }
