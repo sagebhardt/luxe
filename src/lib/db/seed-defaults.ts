@@ -51,7 +51,7 @@ async function main() {
       .values({
         agentType: agent,
         providerId: provider.id,
-        modelName: "gemini-3-flash-preview",
+        modelName: "gemini-2.5-flash",
         systemPrompt: DEFAULT_SYSTEM_PROMPT,
         settings: {
           temperature: 0.4,
@@ -62,7 +62,7 @@ async function main() {
         target: agentConfigs.agentType,
         set: {
           providerId: provider.id,
-          modelName: "gemini-3-flash-preview",
+          modelName: "gemini-2.5-flash",
           systemPrompt: DEFAULT_SYSTEM_PROMPT,
           updatedAt: new Date(),
         },
