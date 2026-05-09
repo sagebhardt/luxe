@@ -5,6 +5,7 @@ import { KpiStrip } from "@/components/crm/KpiStrip";
 import { InnerTabs } from "@/components/crm/InnerTabs";
 import { TripsTable } from "@/components/crm/TripsTable";
 import { AIIntelligence } from "@/components/crm/AIIntelligence";
+import { RegenerateInsightsButton } from "@/components/crm/RegenerateInsightsButton";
 import { ActivityFeed } from "@/components/crm/ActivityFeed";
 import { QuickNote } from "@/components/crm/QuickNote";
 import {
@@ -72,7 +73,10 @@ export default async function ClientsPage({
 
         <aside className="crm-right">
           <div className="crp-sec">
-            <div className="crp-lbl">AI Client Intelligence</div>
+            <div className="crp-head">
+              <div className="crp-lbl">AI Client Intelligence</div>
+              <RegenerateInsightsButton clientId={detail.client.id} />
+            </div>
             <AIIntelligence insights={detail.client.insights} />
           </div>
           <div className="crp-sec">
