@@ -1301,6 +1301,21 @@ body:has(.share-shell) {
   margin-right: auto;
 }
 
+.share-empty {
+  font-size: 13px;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--stone);
+  background: var(--warm-white);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 28px 32px;
+  text-align: center;
+  line-height: 1.7;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
 .share-chat {
   background: var(--warm-white);
   border: 1px solid var(--border);

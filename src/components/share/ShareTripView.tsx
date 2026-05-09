@@ -23,9 +23,18 @@ type EventMeta = {
 };
 
 export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
-  const featured = trip.bookings.filter(
-    (b) => (b.metadata as Record<string, unknown> | null)?.featured === true,
-  );
+  /* "Confirmed for you" — anchor bookings the client should see as
+   * top-level commitments. Either explicitly featured by an agent
+   * decision OR a confirmed/pending booking that isn't just a
+   * timeline event. */
+  const featured = trip.bookings.filter((b) => {
+    const meta = (b.metadata ?? {}) as Record<string, unknown>;
+    if (meta.featured === true) return true;
+    if (meta.time != null) return false; // timeline-only event
+    return b.status === "confirmed" || b.status === "pending";
+  });
+
+  /* "Day by day" — anything with a time on it. */
   const timeline = trip.bookings.filter(
     (b) => (b.metadata as EventMeta | null)?.time != null,
   );
@@ -62,13 +71,21 @@ export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
           </p>
         </section>
 
-        {featured.length > 0 ? (
-          <section className="share-section">
-            <div className="share-section-label">Confirmed for you</div>
+        <section className="share-section">
+          <div className="share-section-label">Confirmed for you</div>
+          {featured.length === 0 ? (
+            <div className="share-empty">
+              Your concierge is finalizing reservations. Check back soon —
+              you'll see hotel and flight confirmations here as they're
+              booked.
+            </div>
+          ) : (
             <div className="share-cards">
               {featured.map((b) => {
                 const meta = (b.metadata ?? {}) as Record<string, unknown>;
-                const subtitle = (meta.subtitle as string | undefined) ?? "";
+                const subtitle =
+                  (meta.subtitle as string | undefined) ??
+                  defaultSubtitle(b.kind);
                 return (
                   <div key={b.id} className="share-card">
                     <div className="share-card-tag">{subtitle}</div>
@@ -92,13 +109,18 @@ export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
                 );
               })}
             </div>
-          </section>
-        ) : null}
+          )}
+        </section>
 
-        {days.size > 0 ? (
-          <section className="share-section">
-            <div className="share-section-label">Day by day</div>
-            {[...days.entries()].map(([date, items]) => {
+        <section className="share-section">
+          <div className="share-section-label">Day by day</div>
+          {days.size === 0 ? (
+            <div className="share-empty">
+              Day-by-day plan coming soon. Your concierge is mapping out
+              timing, transfers, and reservations.
+            </div>
+          ) : (
+            [...days.entries()].map(([date, items]) => {
               const { num, dow } = formatDayLabel(date);
               return (
                 <div key={date} className="share-day">
@@ -127,9 +149,9 @@ export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
                   </div>
                 </div>
               );
-            })}
-          </section>
-        ) : null}
+            })
+          )}
+        </section>
 
         <section className="share-section">
           <div className="share-section-label">Ask anything</div>
@@ -151,4 +173,21 @@ export function ShareTripView({ trip, token }: { trip: Trip; token: string }) {
       </footer>
     </div>
   );
+}
+
+function defaultSubtitle(kind: string): string {
+  switch (kind) {
+    case "hotel":
+      return "Hotel";
+    case "flight":
+      return "Flight";
+    case "dining":
+      return "Dining";
+    case "experience":
+      return "Experience";
+    case "transfer":
+      return "Transfer";
+    default:
+      return "Booking";
+  }
 }
