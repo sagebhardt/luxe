@@ -1,0 +1,387 @@
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  integer,
+  numeric,
+  jsonb,
+  pgEnum,
+  date,
+  index,
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+
+/* -----------------------------------------------------------------
+ * Enums
+ * ----------------------------------------------------------------- */
+
+export const clientTag = pgEnum("client_tag", [
+  "vip",
+  "active",
+  "prospect",
+  "dormant",
+]);
+
+export const tripStatus = pgEnum("trip_status", [
+  "draft",
+  "active",
+  "pending",
+  "completed",
+  "archived",
+]);
+
+export const agentType = pgEnum("agent_type", [
+  "flight",
+  "hotel",
+  "itinerary",
+  "dining",
+]);
+
+export const agentRunStatus = pgEnum("agent_run_status", [
+  "waiting",
+  "running",
+  "done",
+  "failed",
+]);
+
+export const decisionStatus = pgEnum("decision_status", [
+  "pending_approval",
+  "approved",
+  "rejected",
+  "booked",
+]);
+
+export const bookingStatus = pgEnum("booking_status", [
+  "research",
+  "pending",
+  "confirmed",
+  "cancelled",
+]);
+
+export const bookingKind = pgEnum("booking_kind", [
+  "flight",
+  "hotel",
+  "dining",
+  "experience",
+  "transfer",
+  "other",
+]);
+
+export const activityType = pgEnum("activity_type", [
+  "call",
+  "email",
+  "booking",
+  "agent_action",
+  "review",
+  "note",
+  "trip_event",
+]);
+
+export const logAvatar = pgEnum("log_avatar", ["orchestrator", "sub_agent"]);
+
+export const insightKind = pgEnum("insight_kind", [
+  "next_trip_signal",
+  "spend_pattern",
+  "risk_flag",
+]);
+
+export const alertKind = pgEnum("alert_kind", ["warn", "info"]);
+
+/* -----------------------------------------------------------------
+ * Clients (CRM)
+ * ----------------------------------------------------------------- */
+
+export const clients = pgTable(
+  "clients",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    name: text().notNull(),
+    email: text(),
+    phone: text(),
+    tag: clientTag().notNull().default("prospect"),
+    avatarColor: text(),
+    npsScore: integer(),
+    lifetimeValueCents: integer().notNull().default(0),
+    notes: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("clients_tag_idx").on(t.tag)],
+);
+
+export const travelerPreferences = pgTable("traveler_preferences", {
+  clientId: uuid()
+    .primaryKey()
+    .references(() => clients.id, { onDelete: "cascade" }),
+  hotelStyle: text(), // 'boutique' | 'chain' | 'mixed'
+  seatPreference: text(), // 'window' | 'aisle' | 'any'
+  flightClass: text(), // 'economy' | 'business' | 'first'
+  diningStyle: text(),
+  dietaryRestrictions: text().array(),
+  loyaltyPrograms: jsonb().$type<Record<string, string>>(),
+  preferredDestinations: text().array(),
+  pacePreference: text(), // 'relaxed' | 'balanced' | 'packed'
+  extras: jsonb().$type<Record<string, unknown>>(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+/* -----------------------------------------------------------------
+ * Trips
+ * ----------------------------------------------------------------- */
+
+export const trips = pgTable(
+  "trips",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    clientId: uuid()
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    name: text().notNull(),
+    destination: text().notNull(),
+    startDate: date(),
+    endDate: date(),
+    travelerCount: integer().notNull().default(1),
+    budgetCents: integer(),
+    committedCents: integer().notNull().default(0),
+    status: tripStatus().notNull().default("draft"),
+    summary: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("trips_client_idx").on(t.clientId),
+    index("trips_status_idx").on(t.status),
+  ],
+);
+
+/* -----------------------------------------------------------------
+ * Agent runs / decisions / bookings
+ * ----------------------------------------------------------------- */
+
+export const agentRuns = pgTable(
+  "agent_runs",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    tripId: uuid()
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    agent: agentType().notNull(),
+    status: agentRunStatus().notNull().default("waiting"),
+    headline: text(),
+    detail: text(),
+    startedAt: timestamp({ withTimezone: true }),
+    completedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("agent_runs_trip_idx").on(t.tripId)],
+);
+
+export const agentDecisions = pgTable(
+  "agent_decisions",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    tripId: uuid()
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    agentRunId: uuid().references(() => agentRuns.id, { onDelete: "set null" }),
+    agent: agentType().notNull(),
+    headline: text().notNull(),
+    rationale: text(),
+    recommendation: jsonb().$type<Record<string, unknown>>().notNull(),
+    alternatives: jsonb().$type<Record<string, unknown>[]>(),
+    status: decisionStatus().notNull().default("pending_approval"),
+    reviewedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("agent_decisions_trip_idx").on(t.tripId),
+    index("agent_decisions_status_idx").on(t.status),
+  ],
+);
+
+export const bookings = pgTable(
+  "bookings",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    tripId: uuid()
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    decisionId: uuid().references(() => agentDecisions.id, {
+      onDelete: "set null",
+    }),
+    kind: bookingKind().notNull(),
+    title: text().notNull(),
+    provider: text(),
+    detail: text(),
+    priceCents: integer(),
+    status: bookingStatus().notNull().default("research"),
+    occursOn: date(),
+    metadata: jsonb().$type<Record<string, unknown>>(),
+    confirmedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("bookings_trip_idx").on(t.tripId),
+    index("bookings_status_idx").on(t.status),
+  ],
+);
+
+/* -----------------------------------------------------------------
+ * AI insights and trip alerts (CRM right panel + Trip right panel)
+ * ----------------------------------------------------------------- */
+
+export const aiInsights = pgTable(
+  "ai_insights",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    clientId: uuid()
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    kind: insightKind().notNull(),
+    body: text().notNull(),
+    sortOrder: integer().notNull().default(0),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("ai_insights_client_idx").on(t.clientId, t.sortOrder)],
+);
+
+export const tripAlerts = pgTable(
+  "trip_alerts",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    tripId: uuid()
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    kind: alertKind().notNull(),
+    icon: text(),
+    body: text().notNull(),
+    sortOrder: integer().notNull().default(0),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("trip_alerts_trip_idx").on(t.tripId, t.sortOrder)],
+);
+
+/* -----------------------------------------------------------------
+ * Logs / activity
+ * ----------------------------------------------------------------- */
+
+export const agentLogMessages = pgTable(
+  "agent_log_messages",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    tripId: uuid()
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    avatar: logAvatar().notNull().default("sub_agent"),
+    body: text().notNull(),
+    occurredAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("agent_log_trip_idx").on(t.tripId, t.occurredAt)],
+);
+
+export const activityLog = pgTable(
+  "activity_log",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    clientId: uuid()
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    tripId: uuid().references(() => trips.id, { onDelete: "set null" }),
+    type: activityType().notNull(),
+    actor: text(), // 'system' | 'agent:flight' | 'operator:{name}' etc.
+    summary: text().notNull(),
+    detail: jsonb().$type<Record<string, unknown>>(),
+    occurredAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("activity_client_idx").on(t.clientId, t.occurredAt),
+    index("activity_trip_idx").on(t.tripId),
+  ],
+);
+
+/* -----------------------------------------------------------------
+ * Relations
+ * ----------------------------------------------------------------- */
+
+export const clientsRelations = relations(clients, ({ one, many }) => ({
+  preferences: one(travelerPreferences, {
+    fields: [clients.id],
+    references: [travelerPreferences.clientId],
+  }),
+  trips: many(trips),
+  activity: many(activityLog),
+  insights: many(aiInsights),
+}));
+
+export const aiInsightsRelations = relations(aiInsights, ({ one }) => ({
+  client: one(clients, {
+    fields: [aiInsights.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const tripAlertsRelations = relations(tripAlerts, ({ one }) => ({
+  trip: one(trips, { fields: [tripAlerts.tripId], references: [trips.id] }),
+}));
+
+export const agentLogMessagesRelations = relations(
+  agentLogMessages,
+  ({ one }) => ({
+    trip: one(trips, {
+      fields: [agentLogMessages.tripId],
+      references: [trips.id],
+    }),
+  }),
+);
+
+export const activityLogRelations = relations(activityLog, ({ one }) => ({
+  client: one(clients, {
+    fields: [activityLog.clientId],
+    references: [clients.id],
+  }),
+  trip: one(trips, {
+    fields: [activityLog.tripId],
+    references: [trips.id],
+  }),
+}));
+
+export const tripsRelations = relations(trips, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [trips.clientId],
+    references: [clients.id],
+  }),
+  agentRuns: many(agentRuns),
+  decisions: many(agentDecisions),
+  bookings: many(bookings),
+  log: many(agentLogMessages),
+  alerts: many(tripAlerts),
+}));
+
+export const agentRunsRelations = relations(agentRuns, ({ one, many }) => ({
+  trip: one(trips, { fields: [agentRuns.tripId], references: [trips.id] }),
+  decisions: many(agentDecisions),
+}));
+
+export const agentDecisionsRelations = relations(
+  agentDecisions,
+  ({ one, many }) => ({
+    trip: one(trips, {
+      fields: [agentDecisions.tripId],
+      references: [trips.id],
+    }),
+    run: one(agentRuns, {
+      fields: [agentDecisions.agentRunId],
+      references: [agentRuns.id],
+    }),
+    bookings: many(bookings),
+  }),
+);
+
+export const bookingsRelations = relations(bookings, ({ one }) => ({
+  trip: one(trips, { fields: [bookings.tripId], references: [trips.id] }),
+  decision: one(agentDecisions, {
+    fields: [bookings.decisionId],
+    references: [agentDecisions.id],
+  }),
+}));
