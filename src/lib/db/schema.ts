@@ -9,6 +9,7 @@ import {
   pgEnum,
   date,
   index,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -87,6 +88,13 @@ export const insightKind = pgEnum("insight_kind", [
 ]);
 
 export const alertKind = pgEnum("alert_kind", ["warn", "info"]);
+
+export const providerKind = pgEnum("provider_kind", [
+  "google_vertex",
+  "google_ai",
+  "openai",
+  "anthropic",
+]);
 
 /* -----------------------------------------------------------------
  * Clients (CRM)
@@ -263,6 +271,41 @@ export const tripAlerts = pgTable(
 );
 
 /* -----------------------------------------------------------------
+ * Model providers + per-agent model config (admin)
+ * ----------------------------------------------------------------- */
+
+export const modelProviders = pgTable("model_providers", {
+  id: uuid().primaryKey().defaultRandom(),
+  slug: text().notNull().unique(),
+  displayName: text().notNull(),
+  kind: providerKind().notNull(),
+  /* Provider-specific non-secret config: project, location, baseURL, etc. */
+  config: jsonb().$type<Record<string, unknown>>(),
+  /* Name of the Vercel env var holding the secret (API key or
+   * serialized service-account JSON). The value lives in env, not DB. */
+  credentialsEnvVar: text(),
+  enabled: boolean().notNull().default(true),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+export const agentConfigs = pgTable("agent_configs", {
+  agentType: agentType().primaryKey(),
+  providerId: uuid()
+    .notNull()
+    .references(() => modelProviders.id, { onDelete: "restrict" }),
+  modelName: text().notNull(),
+  systemPrompt: text(),
+  settings: jsonb().$type<{
+    temperature?: number;
+    maxTokens?: number;
+    topP?: number;
+    topK?: number;
+  }>(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+/* -----------------------------------------------------------------
  * Logs / activity
  * ----------------------------------------------------------------- */
 
@@ -323,6 +366,20 @@ export const aiInsightsRelations = relations(aiInsights, ({ one }) => ({
 
 export const tripAlertsRelations = relations(tripAlerts, ({ one }) => ({
   trip: one(trips, { fields: [tripAlerts.tripId], references: [trips.id] }),
+}));
+
+export const modelProvidersRelations = relations(
+  modelProviders,
+  ({ many }) => ({
+    agentConfigs: many(agentConfigs),
+  }),
+);
+
+export const agentConfigsRelations = relations(agentConfigs, ({ one }) => ({
+  provider: one(modelProviders, {
+    fields: [agentConfigs.providerId],
+    references: [modelProviders.id],
+  }),
 }));
 
 export const agentLogMessagesRelations = relations(

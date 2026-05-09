@@ -15,6 +15,13 @@
       "when": 1778287526416,
       "tag": "0001_spicy_senator_kelly",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778291540570,
+      "tag": "0002_absent_celestials",
+      "breakpoints": true
     }
   ]
 }

@@ -9,6 +9,7 @@ import { AgentLog } from "@/components/trip/AgentLog";
 import { AgentInput } from "@/components/trip/AgentInput";
 import { BudgetTracker } from "@/components/trip/BudgetTracker";
 import { TripAlerts } from "@/components/trip/TripAlerts";
+import { RunFlightAgentButton } from "@/components/trip/RunFlightAgentButton";
 import {
   getDefaultTripId,
   getTripBudget,
@@ -60,6 +61,7 @@ export default async function TripPage({
 
           <div className="sec-lbl">Agent Pipeline</div>
           <AgentPipeline runs={trip.agentRuns} />
+          <RunFlightAgentButton tripId={tripId} />
 
           {pendingDecision ? (
             <ApprovalBanner decision={pendingDecision} />
