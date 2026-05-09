@@ -3,28 +3,36 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { trips, clients, travelerPreferences } from "@/lib/db/schema";
-import { resolveCoords } from "@/lib/data/city-coords";
-import {
-  type DuffelStayResult,
-  searchStays,
-  DuffelError,
-} from "@/lib/data/duffel";
+import { findHotelsForCity, type HotelOption } from "@/lib/data/hotels-catalog";
 import { runAgent, type AgentRunResult } from "@/lib/ai/runner";
+
+/**
+ * Hotel Agent
+ *
+ * Uses an in-house curated catalog of boutique-luxury hotels per city
+ * (src/lib/data/hotels-catalog.ts) since Duffel Stays is a paid tier
+ * and free hotel APIs (Booking, Hotelbeds) gate on partner approval.
+ *
+ * Same scoring pattern as Flight Agent — Gemini ranks options against
+ * the traveler's stated preferences and produces a structured top-pick
+ * + alternatives. Swap the data layer when real inventory is wired up.
+ */
 
 export const HotelAgentSchema = z.object({
   topPick: z.object({
-    accommodationId: z.string(),
+    hotelId: z.string(),
     name: z.string(),
     rationale: z.string(),
-    priceCents: z.number().int(),
+    nightlyCents: z.number().int(),
+    totalCents: z.number().int(),
     nightsTotal: z.number().int(),
   }),
   alternatives: z
     .array(
       z.object({
-        accommodationId: z.string(),
+        hotelId: z.string(),
         name: z.string(),
-        priceCents: z.number().int(),
+        nightlyCents: z.number().int(),
         note: z.string(),
       }),
     )
@@ -45,17 +53,16 @@ export async function runHotelAgent(
   });
   if (!trip) throw new HotelAgentInputError(`Trip ${tripId} not found`);
   if (!trip.startDate || !trip.endDate) {
+    throw new HotelAgentInputError(`Trip ${tripId} has no startDate/endDate.`);
+  }
+
+  const hotels = findHotelsForCity(trip.destination);
+  if (hotels.length === 0) {
     throw new HotelAgentInputError(
-      `Trip ${tripId} has no startDate/endDate.`,
+      `No hotels in catalog for "${trip.destination}". Add entries to src/lib/data/hotels-catalog.ts.`,
     );
   }
 
-  const coords = resolveCoords(trip.destination);
-  if (!coords) {
-    throw new HotelAgentInputError(
-      `Couldn't resolve "${trip.destination}" to coordinates. Add to city-coords.ts.`,
-    );
-  }
   const nights = Math.max(
     1,
     Math.round(
@@ -65,65 +72,33 @@ export async function runHotelAgent(
     ),
   );
 
-  let stays: DuffelStayResult[];
-  try {
-    stays = await searchStays(
-      {
-        check_in_date: trip.startDate,
-        check_out_date: trip.endDate,
-        rooms: 1,
-        guests: trip.travelerCount,
-        location: {
-          radius: 15,
-          geographic_coordinates: {
-            latitude: coords.lat,
-            longitude: coords.lng,
-          },
-        },
-      },
-      { limit: 8 },
-    );
-  } catch (err) {
-    if (err instanceof DuffelError) {
-      throw new HotelAgentInputError(
-        `Duffel stays search failed (${err.status}): ${truncate(String(err.body), 240)}`,
-      );
-    }
-    throw err;
-  }
-
-  if (stays.length === 0) {
-    throw new HotelAgentInputError(
-      `Duffel returned no stays for ${trip.destination}. Test data is curated — try a supported city.`,
-    );
-  }
-
   return runAgent<HotelAgentOutput>({
     agent: "hotel",
     tripId,
-    headline: `Searching hotels in ${trip.destination} for ${nights} night${nights === 1 ? "" : "s"}`,
+    headline: `Ranking ${hotels.length} hotels in ${trip.destination}`,
     outputSchema: HotelAgentSchema,
-    buildPrompt: () => buildPrompt(trip, stays, nights),
+    buildPrompt: () => buildPrompt(trip, hotels, nights),
     toDecision: (output) => ({
       headline: output.topPick.name,
       rationale: output.topPick.rationale,
       recommendation: {
-        accommodationId: output.topPick.accommodationId,
+        hotelId: output.topPick.hotelId,
+        nightlyCents: output.topPick.nightlyCents,
+        priceCents: output.topPick.totalCents,
         nightsTotal: output.topPick.nightsTotal,
-        priceCents: output.topPick.priceCents,
         preferenceMatch: output.preferenceMatch,
       },
       alternatives: output.alternatives.map((a) => ({
-        accommodationId: a.accommodationId,
+        hotelId: a.hotelId,
         name: a.name,
-        priceCents: a.priceCents,
+        priceCents: a.nightlyCents,
         note: a.note,
       })),
     }),
     toLog: (output) => [
       {
         avatar: "sub_agent",
-        body: `Hotel agent: ranked ${stays.length} properties, recommends <em>${output.topPick.name}</em>. ${output.preferenceMatch}`,
+        body: `Hotel agent: ranked ${hotels.length} properties, recommends <em>${output.topPick.name}</em>. ${output.preferenceMatch}`,
       },
     ],
   });
@@ -135,7 +110,7 @@ function buildPrompt(
       preferences: typeof travelerPreferences.$inferSelect | null;
     };
   },
-  stays: DuffelStayResult[],
+  hotels: HotelOption[],
   nights: number,
 ) {
   const prefs = trip.client.preferences;
@@ -148,21 +123,19 @@ function buildPrompt(
       .filter(Boolean)
       .join(" · ") || "no specific preferences on file";
 
-  const block = stays
-    .map((r, i) => {
-      const a = r.accommodation;
+  const block = hotels
+    .map((h, i) => {
+      const totalUsd = h.pricePerNightUsd * nights;
       return [
-        `[${i + 1}] accommodationId=${a.id}`,
-        `    name: ${a.name}`,
-        a.chain?.name && `    chain: ${a.chain.name}`,
-        a.rating && `    rating: ${a.rating}`,
-        a.review_score && `    review: ${a.review_score}`,
-        a.location?.address?.line_one &&
-          `    address: ${a.location.address.line_one}`,
-        `    nightly avg: ${r.cheapest_rate_currency} ${(Number(r.cheapest_rate_total_amount) / nights).toFixed(2)} (total: ${r.cheapest_rate_currency} ${r.cheapest_rate_total_amount})`,
-      ]
-        .filter(Boolean)
-        .join("\n");
+        `[${i + 1}] hotelId=${h.id}`,
+        `    name: ${h.name}`,
+        `    neighborhood: ${h.neighborhood}`,
+        `    style: ${h.style}`,
+        `    stars: ${h.starsApprox}`,
+        `    nightly: $${h.pricePerNightUsd.toLocaleString("en-US")} (total ${nights} nights: $${totalUsd.toLocaleString("en-US")})`,
+        `    vibe: ${h.vibe}`,
+        `    amenities: ${h.amenities.join(", ")}`,
+      ].join("\n");
     })
     .join("\n\n");
 
@@ -175,15 +148,11 @@ function buildPrompt(
       ? `Total trip budget: $${(trip.budgetCents / 100).toLocaleString("en-US")}`
       : null,
     "",
-    "Available accommodations (sorted by total price asc):",
+    "Hotel options for this destination:",
     block,
     "",
-    "Score these against the preferences. Boutique-style or independent properties should outweigh chain hotels when the traveler prefers boutique. Return a structured top pick (accommodationId, name, rationale, priceCents=total, nightsTotal), up to 3 alternatives, and a one-sentence preferenceMatch summary. priceCents must be the total stay price in cents (multiply total_amount by 100, rounded). Use accommodationIds verbatim from the list — do not invent any.",
+    "Score these against the preferences. Boutique/design/ryokan/riad/lodge styles should outweigh resort or commodity properties when the traveler prefers boutique. Return a structured top pick (hotelId, name, rationale, nightlyCents=cents per night, totalCents=cents for the full stay, nightsTotal), up to 3 alternatives (with their nightlyCents in cents), and a one-sentence preferenceMatch summary. Compute cents from the dollar values (multiply by 100). Use hotelIds verbatim from the list — do not invent any.",
   ]
     .filter(Boolean)
     .join("\n");
-}
-
-function truncate(s: string, n: number): string {
-  return s.length > n ? `${s.slice(0, n)}…` : s;
 }
