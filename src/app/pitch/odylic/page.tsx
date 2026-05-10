@@ -362,7 +362,7 @@ export default function OdylicPitchPage() {
           />
           <BulletCard
             label="Imán de talento"
-            body="La competencia recluta travel designers ofreciendo Excel y PowerPoint. Odylic ofrece una plataforma agéntica donde la ITD diseña en lugar de transcribir, atiende más clientes con menos fricción, y gana más por cliente. La posición se vuelve la mejor del mercado — y eso compounde con cada nueva contratación."
+            body="La competencia recluta travel designers ofreciendo Excel y PowerPoint. Odylic ofrece una plataforma agéntica donde la ITD diseña en lugar de transcribir, atiende más clientes con menos fricción, y gana más por cliente. La posición se vuelve la mejor del mercado — y ese efecto se multiplica con cada nueva contratación."
           />
         </div>
 
@@ -456,13 +456,13 @@ export default function OdylicPitchPage() {
         </h3>
         <p className="pitch-body">
           El crecimiento no viene de un solo efecto mágico. Viene de tres
-          fuerzas que <em>compounden</em>: cada ITD opera con menos
-          fricción operativa (<em>capacidad</em>), los clientes existentes
-          vuelven más seguido (<em>retención</em>), y la posición de
-          travel designer en Odylic se vuelve más atractiva que la de la
-          competencia (<em>talento</em>). La tercera es la que sostiene
-          las primeras dos en el largo plazo — sin talento que escala,
-          la red no escala.
+          fuerzas que <em>se refuerzan entre sí</em>: cada ITD opera con
+          menos fricción operativa (<em>capacidad</em>), los clientes
+          existentes vuelven más seguido (<em>retención</em>), y la
+          posición de travel designer en Odylic se vuelve más atractiva
+          que la de la competencia (<em>talento</em>). La tercera es la
+          que sostiene las primeras dos en el largo plazo — sin talento
+          que escala, la red no escala.
         </p>
 
         <div className="proj-table" role="table" aria-label="Supuestos del modelo">
