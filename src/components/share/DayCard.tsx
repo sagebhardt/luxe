@@ -10,6 +10,7 @@ type Event = {
   detail: string | null;
   cost: number | null;
   approx: boolean;
+  surprise?: boolean;
 };
 
 const KIND_ORNAMENTS = ["✦", "❋", "✧", "❉", "✺"] as const;
@@ -99,13 +100,19 @@ export function DayCard({
         {events.map((ev) => {
           const enrich = eventDetails[ev.title] ?? null;
           return (
-            <li key={ev.id} className="day-evt">
+            <li
+              key={ev.id}
+              className={`day-evt${ev.surprise ? " is-surprise" : ""}`}
+            >
               <span className="day-evt-line" aria-hidden="true" />
               <div className="day-evt-time">{ev.time}</div>
               <div className="day-evt-icon" aria-hidden="true">
                 {ev.icon}
               </div>
               <div className="day-evt-body">
+                {ev.surprise ? (
+                  <div className="share-evt-surprise-tag">A small touch</div>
+                ) : null}
                 <div className="day-evt-name">{ev.title}</div>
                 {ev.detail ? (
                   <div className="day-evt-detail">{ev.detail}</div>

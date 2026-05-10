@@ -148,6 +148,43 @@ export async function lockBookingCostAction(
   }
 }
 
+/**
+ * Flip the metadata.surprise flag on a booking. When true, the share
+ * page hides the booking from the client until its occursOn day, then
+ * reveals it with a "A small touch" label — used for arranged-but-
+ * confidential extras (in-room amenity, sake tasting, anniversary
+ * dinner). Other metadata keys are preserved.
+ */
+export async function setBookingSurpriseAction(
+  bookingId: string,
+  surprise: boolean,
+): Promise<Result> {
+  if (!bookingId) return { ok: false, error: "bookingId required" };
+  try {
+    const viewer = await getCurrentUserOrThrow();
+    await assertOwnsBooking(bookingId, viewer);
+    const row = await db.query.bookings.findFirst({
+      where: eq(bookings.id, bookingId),
+      columns: { metadata: true },
+    });
+    if (!row) return { ok: false, error: "Booking not found" };
+    const next = { ...((row.metadata ?? {}) as Record<string, unknown>) };
+    if (surprise) {
+      next.surprise = true;
+    } else {
+      delete next.surprise;
+    }
+    await db
+      .update(bookings)
+      .set({ metadata: next })
+      .where(eq(bookings.id, bookingId));
+    revalidatePath("/trip");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: authError(err, "save failed") };
+  }
+}
+
 /** Unlock so the operator can edit again. Clears the FX rate so the
  * next lock captures fresh. */
 export async function unlockBookingCostAction(

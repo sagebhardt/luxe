@@ -1,6 +1,7 @@
 import type { bookings, ledgerEntries } from "@/lib/db/schema";
 import { BookingFinancials } from "./BookingFinancials";
 import { BookingLedger } from "./BookingLedger";
+import { SurpriseToggle } from "./SurpriseToggle";
 
 type Booking = typeof bookings.$inferSelect;
 type LedgerEntry = typeof ledgerEntries.$inferSelect;
@@ -40,6 +41,7 @@ export function CommittedDecisions({
       {rows.map((b) => {
         const meta = (b.metadata ?? {}) as Record<string, unknown>;
         const subtitle = (meta.subtitle as string | undefined) ?? "";
+        const isSurprise = meta.surprise === true;
         const ledger = ledgerByBooking.get(b.id) ?? [];
         return (
           <div key={b.id} className={`det-card ${CARD_CLASS[b.status]}`}>
@@ -48,6 +50,7 @@ export function CommittedDecisions({
             </span>
             <div className="det-type">{subtitle}</div>
             <div className="det-val">{b.title}</div>
+            <SurpriseToggle bookingId={b.id} initial={isSurprise} />
             {b.detail ? (
               <div className="det-info">
                 {b.detail.split("\n").map((line, i) => (

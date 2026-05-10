@@ -6,7 +6,9 @@ import {
   agentLogMessages,
   bookings,
   clients,
+  npsResponses,
   trips,
+  tripAlerts,
   tripShareTokens,
 } from "@/lib/db/schema";
 import {
@@ -45,8 +47,23 @@ export async function getSharedTripDetail(tripId: string) {
       decisions: {
         where: eq(agentDecisions.status, "pending_approval"),
       },
+      /* Only client-visible alerts surface on the share page —
+       * operator-only alerts stay inside /trip. */
+      alerts: {
+        where: eq(tripAlerts.clientVisible, true),
+        orderBy: [asc(tripAlerts.sortOrder), asc(tripAlerts.createdAt)],
+      },
     },
   });
+}
+
+export async function getTripNpsResponse(tripId: string) {
+  const [row] = await db
+    .select()
+    .from(npsResponses)
+    .where(eq(npsResponses.tripId, tripId))
+    .limit(1);
+  return row ?? null;
 }
 
 export async function getTripWeatherChips(

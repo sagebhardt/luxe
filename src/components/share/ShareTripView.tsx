@@ -5,16 +5,20 @@ import type {
   clients,
   bookings,
   agentLogMessages,
+  tripAlerts,
+  npsResponses,
 } from "@/lib/db/schema";
 import type { TripNarrative } from "@/lib/types/narrative";
 import type { WeatherChip } from "@/lib/data/weather";
 import { ClientChat } from "./ClientChat";
 import { DayCard } from "./DayCard";
+import { NpsForm } from "./NpsForm";
 
 type Trip = typeof trips.$inferSelect & {
   client: typeof clients.$inferSelect;
   bookings: (typeof bookings.$inferSelect)[];
   log: (typeof agentLogMessages.$inferSelect)[];
+  alerts: (typeof tripAlerts.$inferSelect)[];
 };
 
 type EventMeta = {
@@ -24,27 +28,47 @@ type EventMeta = {
   timelineDetail?: string;
   timelineCost?: number;
   approxCost?: boolean;
+  surprise?: boolean;
 };
+
+type Phase = "before" | "during" | "after";
+
+const NPS_WINDOW_DAYS = 60;
 
 export function ShareTripView({
   trip,
   token,
   weather,
+  nps,
 }: {
   trip: Trip;
   token: string;
   weather: Record<string, WeatherChip>;
+  nps: typeof npsResponses.$inferSelect | null;
 }) {
   const narrative = (trip.clientNarrative ?? null) as TripNarrative | null;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const phase = computePhase(trip.startDate, trip.endDate, todayIso);
 
-  const featured = trip.bookings.filter((b) => {
+  /* Surprise time-gating: if a booking is flagged metadata.surprise=true
+   * and its occursOn is in the future, hide it entirely from the client
+   * view. Once the day arrives it appears with a special label. */
+  const visibleBookings = trip.bookings.filter((b) => {
+    const meta = (b.metadata ?? {}) as EventMeta;
+    if (meta.surprise === true && b.occursOn && b.occursOn > todayIso) {
+      return false;
+    }
+    return true;
+  });
+
+  const featured = visibleBookings.filter((b) => {
     const meta = (b.metadata ?? {}) as Record<string, unknown>;
     if (meta.featured === true) return true;
     if (meta.time != null) return false;
     return b.status === "confirmed" || b.status === "pending";
   });
 
-  const timeline = trip.bookings.filter(
+  const timeline = visibleBookings.filter(
     (b) => (b.metadata as EventMeta | null)?.time != null,
   );
 
@@ -62,7 +86,45 @@ export function ShareTripView({
     narrative?.heroOpening ??
     `${trip.destination} awaits. We've shaped a journey around what you've told us matters — pace, place, and the small details that turn a trip into a story.`;
 
-  const dayList = [...days.entries()];
+  const dayList = [...days.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const dayCount = dayList.length;
+  const tripLengthDays =
+    trip.startDate && trip.endDate
+      ? Math.max(
+          1,
+          Math.round(
+            (new Date(trip.endDate + "T00:00:00").getTime() -
+              new Date(trip.startDate + "T00:00:00").getTime()) /
+              (1000 * 60 * 60 * 24),
+          ) + 1,
+        )
+      : 0;
+
+  /* Today-first reorder: when underway, find today's date and rotate it
+   * to the front so the client lands on the right day. We preserve the
+   * original index so DayCard's "Day N of M" is still correct. */
+  const todayIdx =
+    phase === "during" ? dayList.findIndex(([date]) => date === todayIso) : -1;
+  const orderedDayList: Array<{
+    date: string;
+    items: typeof timeline;
+    originalIndex: number;
+  }> = dayList.map(([date, items], originalIndex) => ({
+    date,
+    items,
+    originalIndex,
+  }));
+  if (todayIdx > 0) {
+    const [todayCard] = orderedDayList.splice(todayIdx, 1);
+    orderedDayList.unshift(todayCard);
+  }
+
+  const visibleAlerts = trip.alerts.filter((a) => a.clientVisible);
+  const showNpsForm =
+    phase === "after" &&
+    !nps &&
+    trip.endDate != null &&
+    daysSince(trip.endDate, todayIso) <= NPS_WINDOW_DAYS;
 
   return (
     <div className="share-shell">
@@ -122,7 +184,11 @@ export function ShareTripView({
           </p>
           {daysUntil != null ? (
             <div className="share-countdown">
-              {daysUntil > 0 ? (
+              {phase === "after" ? (
+                <span className="share-countdown-label">
+                  Returned home
+                </span>
+              ) : daysUntil > 0 ? (
                 <>
                   <span className="share-countdown-num">{daysUntil}</span>
                   <span className="share-countdown-label">
@@ -140,37 +206,89 @@ export function ShareTripView({
           ) : null}
         </section>
 
-        {/* OPENING NARRATIVE */}
-        <section className="share-opening">
-          <p className="share-opening-body">
-            <span className="share-dropcap" aria-hidden="true">
-              {heroOpening.charAt(0)}
-            </span>
-            {heroOpening.slice(1)}
-          </p>
-        </section>
+        {/* MID-TRIP STATUS + LIVE NOTES */}
+        {phase === "during" ? (
+          <section className="share-section">
+            <div className="share-phase">
+              <div className="share-phase-label">Right now</div>
+              <div className="share-phase-body">
+                {phaseLine(trip.destination, daysUntil, tripLengthDays)}
+              </div>
+            </div>
+            {visibleAlerts.length > 0 ? (
+              <div className="share-notes">
+                {visibleAlerts.map((a) => (
+                  <div
+                    key={a.id}
+                    className={`share-note ${a.kind === "warn" ? "al-warn" : "al-info"}`}
+                  >
+                    <div className="share-note-icon" aria-hidden="true">
+                      {a.icon ?? "✦"}
+                    </div>
+                    <div className="share-note-body">
+                      <div className="share-note-from">
+                        {a.signedBy ? (
+                          <>
+                            A note from <em>{a.signedBy}</em>
+                          </>
+                        ) : (
+                          "A note from your designer"
+                        )}
+                      </div>
+                      <div className="share-note-text">{a.body}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
 
-        <Ornament size="lg" />
+        {/* OPENING NARRATIVE — front-loaded before the trip; tucked
+         * after timeline once the trip is underway. */}
+        {phase !== "during" ? (
+          <>
+            <section className="share-opening">
+              <p className="share-opening-body">
+                <span className="share-dropcap" aria-hidden="true">
+                  {heroOpening.charAt(0)}
+                </span>
+                {heroOpening.slice(1)}
+              </p>
+            </section>
+            <Ornament size="lg" />
+          </>
+        ) : null}
 
         {/* CONFIRMED ANCHORS */}
         <section className="share-section">
-          <div className="share-section-eyebrow">What's secured</div>
+          <div className="share-section-eyebrow">What&rsquo;s secured</div>
           <h2 className="share-section-title">Your anchors</h2>
           {featured.length === 0 ? (
             <div className="share-empty">
               Your concierge is finalizing reservations. Check back soon —
-              you'll see hotel and flight confirmations here as they're
+              you&rsquo;ll see hotel and flight confirmations here as they&rsquo;re
               booked.
             </div>
           ) : (
             <div className="share-cards">
               {featured.map((b) => {
-                const meta = (b.metadata ?? {}) as Record<string, unknown>;
+                const meta = (b.metadata ?? {}) as Record<string, unknown> &
+                  EventMeta;
                 const subtitle =
                   (meta.subtitle as string | undefined) ??
                   defaultSubtitle(b.kind);
+                const isSurprise = meta.surprise === true;
                 return (
-                  <article key={b.id} className="share-card">
+                  <article
+                    key={b.id}
+                    className={`share-card${isSurprise ? " is-surprise" : ""}`}
+                  >
+                    {isSurprise ? (
+                      <div className="share-card-surprise-tag">
+                        A small touch
+                      </div>
+                    ) : null}
                     <div className="share-card-tag">{subtitle}</div>
                     <div className="share-card-name">{b.title}</div>
                     {b.detail ? (
@@ -199,24 +317,28 @@ export function ShareTripView({
 
         {/* DAY BY DAY — magazine layout */}
         <section className="share-section">
-          <div className="share-section-eyebrow">The rhythm</div>
-          <h2 className="share-section-title">Your days unfold</h2>
-          {dayList.length === 0 ? (
+          <div className="share-section-eyebrow">
+            {phase === "during" ? "Today and ahead" : "The rhythm"}
+          </div>
+          <h2 className="share-section-title">
+            {phase === "during" ? "Where you are" : "Your days unfold"}
+          </h2>
+          {orderedDayList.length === 0 ? (
             <div className="share-empty">
               Day-by-day plan coming soon. Your concierge is mapping out
               timing, transfers, and reservations.
             </div>
           ) : (
             <div className="day-list">
-              {dayList.map(([date, items], idx) => {
+              {orderedDayList.map(({ date, items, originalIndex }) => {
                 const { num, dow } = formatDayLabel(date);
                 const summary = narrative?.daySummaries?.[date];
                 const w = weather[date] ?? null;
                 return (
                   <DayCard
                     key={date}
-                    index={idx}
-                    total={dayList.length}
+                    index={originalIndex}
+                    total={dayCount}
                     date={date}
                     dayNumber={num}
                     dayOfWeek={dow}
@@ -235,6 +357,7 @@ export function ShareTripView({
                         detail: meta.timelineDetail ?? b.detail ?? null,
                         cost: meta.timelineCost ?? null,
                         approx: meta.approxCost === true,
+                        surprise: meta.surprise === true,
                       };
                     })}
                   />
@@ -243,6 +366,21 @@ export function ShareTripView({
             </div>
           )}
         </section>
+
+        {/* OPENING NARRATIVE (during) */}
+        {phase === "during" ? (
+          <>
+            <Ornament size="lg" />
+            <section className="share-opening">
+              <p className="share-opening-body">
+                <span className="share-dropcap" aria-hidden="true">
+                  {heroOpening.charAt(0)}
+                </span>
+                {heroOpening.slice(1)}
+              </p>
+            </section>
+          </>
+        ) : null}
 
         {/* PRE-TRIP NOTES */}
         {narrative?.preTripNotes && narrative.preTripNotes.length > 0 ? (
@@ -264,6 +402,22 @@ export function ShareTripView({
         ) : null}
 
         <Ornament size="lg" />
+
+        {/* NPS POST-TRIP */}
+        {showNpsForm ? (
+          <NpsForm
+            token={token}
+            clientFirstName={firstName(trip.client.name)}
+          />
+        ) : nps ? (
+          <section className="share-section">
+            <div className="share-nps">
+              <p className="share-nps-done">
+                Thank you — your designer has your read on this trip.
+              </p>
+            </div>
+          </section>
+        ) : null}
 
         {/* CLOSING + CHAT */}
         <section className="share-section share-close">
@@ -323,4 +477,38 @@ function daysFromNow(iso: string): number {
   const target = new Date(iso + "T00:00:00");
   const diff = target.getTime() - now.getTime();
   return Math.round(diff / (1000 * 60 * 60 * 24));
+}
+
+function daysSince(iso: string, todayIso: string): number {
+  const today = new Date(todayIso + "T00:00:00").getTime();
+  const past = new Date(iso + "T00:00:00").getTime();
+  return Math.round((today - past) / (1000 * 60 * 60 * 24));
+}
+
+function computePhase(
+  startDate: string | null,
+  endDate: string | null,
+  todayIso: string,
+): Phase {
+  if (!startDate || !endDate) return "before";
+  if (todayIso < startDate) return "before";
+  if (todayIso > endDate) return "after";
+  return "during";
+}
+
+function phaseLine(
+  destination: string,
+  daysUntil: number | null,
+  totalDays: number,
+): string {
+  if (daysUntil == null) return `In ${destination}`;
+  const dayNumber = Math.abs(daysUntil) + 1;
+  if (totalDays > 0) {
+    return `Day ${dayNumber} of ${totalDays} · ${destination}`;
+  }
+  return `Day ${dayNumber} · ${destination}`;
+}
+
+function firstName(full: string): string {
+  return full.split(/\s+/)[0] ?? full;
 }

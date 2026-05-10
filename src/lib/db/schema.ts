@@ -751,9 +751,40 @@ export const tripAlerts = pgTable(
     icon: text(),
     body: text().notNull(),
     sortOrder: integer().notNull().default(0),
+    /** When true the alert is rendered on the client share page.
+     * Operator-only alerts (default) stay inside /trip. */
+    clientVisible: boolean().notNull().default(false),
+    /** Optional ITD name. When set, the share page renders the alert
+     * as a personal note ("A note from Camila —") instead of a
+     * system-style warn/info strip. */
+    signedBy: text(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("trip_alerts_trip_idx").on(t.tripId, t.sortOrder)],
+);
+
+/* -----------------------------------------------------------------
+ * NPS responses — per-trip history. clients.nps_score holds the
+ * cached latest score for the proactive monitor; this table is the
+ * source of truth.
+ * ----------------------------------------------------------------- */
+
+export const npsResponses = pgTable(
+  "nps_responses",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    tripId: uuid()
+      .notNull()
+      .unique()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    clientId: uuid()
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    score: integer().notNull(),
+    comment: text(),
+    submittedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("nps_responses_client_idx").on(t.clientId, t.submittedAt)],
 );
 
 /* -----------------------------------------------------------------

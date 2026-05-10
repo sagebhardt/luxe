@@ -233,6 +233,101 @@ export function DocumentVaultMockup() {
   );
 }
 
+export function MidTripCompanionMockup() {
+  return (
+    <div className="mock-frame">
+      <div className="mock-window">
+        <span /><span /><span />
+        <div className="mock-url">share.luxe.app / Marcela Fuentes · Tokyo &amp; Kyoto</div>
+      </div>
+      <div className="mock-body">
+        <div className="mock-mt-hero">
+          <div className="mock-eyebrow">For Marcela Fuentes</div>
+          <div className="mock-mt-title">Tokyo &amp; Kyoto</div>
+          <div className="mock-mt-meta">
+            14 May – 22 May · Underway · <em>day 4 of 7</em>
+          </div>
+        </div>
+        <div className="mock-mt-phase">
+          <div className="mock-mt-phase-lbl">Right now</div>
+          <div className="mock-mt-phase-body">
+            Day 4 of 7 · Tokyo &amp; Kyoto, Japan
+          </div>
+        </div>
+        <div className="mock-mt-note">
+          <div className="mock-mt-note-icon">✦</div>
+          <div className="mock-mt-note-body">
+            <div className="mock-mt-note-from">
+              A note from <em>Camila</em>
+            </div>
+            <div className="mock-mt-note-text">
+              Light rain after 4pm — I&rsquo;ve moved tonight&rsquo;s rooftop
+              dinner indoors. The view is just as lovely.
+            </div>
+          </div>
+        </div>
+        <div className="mock-mt-day">
+          <div className="mock-mt-day-num">17</div>
+          <div className="mock-mt-day-evts">
+            <div className="mock-mt-evt">
+              <span className="mock-mt-evt-time">09:00</span>
+              <span className="mock-mt-evt-name">teamLab Planets — early access</span>
+            </div>
+            <div className="mock-mt-evt is-surprise">
+              <span className="mock-mt-evt-tag">A small touch</span>
+              <span className="mock-mt-evt-time">19:30</span>
+              <span className="mock-mt-evt-name">
+                Sake pairing &amp; tasting · Aman Tokyo
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function NpsMockup() {
+  return (
+    <div className="mock-frame mock-frame-tight">
+      <div className="mock-window">
+        <span /><span /><span />
+        <div className="mock-url">share.luxe.app / Marcela Fuentes · post-trip</div>
+      </div>
+      <div className="mock-body">
+        <div className="mock-nps">
+          <div className="mock-nps-eyebrow">A few words</div>
+          <div className="mock-nps-h">How was the trip?</div>
+          <div className="mock-nps-thanks">
+            Marcela, your honest read shapes everything we do next.
+          </div>
+          <div className="mock-nps-prompt">
+            On a scale of 0 to 10, how likely are you to recommend us to a
+            friend?
+          </div>
+          <div className="mock-nps-scale">
+            {Array.from({ length: 11 }, (_, i) => (
+              <div key={i} className={`mock-nps-num${i === 9 ? " is-active" : ""}`}>
+                {i}
+              </div>
+            ))}
+          </div>
+          <div className="mock-nps-axis">
+            <span>Not likely</span>
+            <span>Extremely likely</span>
+          </div>
+          <div className="mock-nps-comment">
+            &ldquo;Camila pensó en cosas que ni se nos habrían ocurrido. La
+            cena de aniversario en el ryokan nos sorprendió completamente.
+            Volvemos.&rdquo;
+          </div>
+          <div className="mock-nps-cta">Send to my designer</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ReportsMockup() {
   return (
     <div className="mock-frame">

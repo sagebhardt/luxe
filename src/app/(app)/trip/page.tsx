@@ -113,8 +113,12 @@ export default async function TripPage({
             <BudgetTracker budget={budget} />
           </div>
           <div className="rp-sec">
-            <div className="rp-lbl">Alerts</div>
-            <TripAlerts alerts={trip.alerts} />
+            <div className="rp-lbl">Alerts &amp; Notes</div>
+            <TripAlerts
+              alerts={trip.alerts}
+              tripId={tripId}
+              defaultSignedBy={viewer.name ?? null}
+            />
           </div>
         </aside>
       </div>
