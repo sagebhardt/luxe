@@ -581,19 +581,27 @@ export default function OdylicPitchPage() {
       </Section>
 
       {/* -------------------------------------------------- THE OFFER */}
-      <Section number="09" eyebrow="La oferta">
-        <h2 className="pitch-h2">Un piloto. Tres ITDs. Noventa días.</h2>
+      <Section number="09" eyebrow="La invitación">
+        <h2 className="pitch-h2">
+          Co-creemos el futuro del viaje de lujo, <em>juntos</em>.
+        </h2>
+        <p className="pitch-lede">
+          No te ofrecemos una prueba. Te ofrecemos un asiento en la mesa
+          donde se decide qué se construye, en qué orden, y para quién.
+          Odylic no entra como cliente piloto: entra como co-autora de
+          la plataforma que su categoría todavía no tiene.
+        </p>
 
         <div className="pitch-grid-2">
           <div>
-            <h3 className="pitch-h3">Lo que entrega Luxe</h3>
+            <h3 className="pitch-h3">Lo que aportamos</h3>
             <ul className="pitch-list">
               <li>
                 Plataforma white-label completa, brandeada Odylic en cada
                 superficie.
               </li>
               <li>
-                Onboarding personalizado de 3 ITDs, con migración de su
+                Onboarding personalizado del equipo, con migración de la
                 cartera actual.
               </li>
               <li>
@@ -611,28 +619,31 @@ export default function OdylicPitchPage() {
                 por la ITD, sorpresas curadas, y captura de NPS.
               </li>
               <li>
-                Soporte directo del equipo de Luxe durante los 90 días.
+                Acceso directo al equipo que construye Luxe: cada
+                decisión de roadmap pasa por la mesa de Odylic.
               </li>
             </ul>
           </div>
           <div>
-            <h3 className="pitch-h3">Lo que pedimos</h3>
+            <h3 className="pitch-h3">Lo que pedimos a cambio</h3>
             <ul className="pitch-list">
               <li>
-                Tres ITDs activas dispuestas a dejar entrar nuestros
-                agentes a su workflow.
+                ITDs dispuestas a dejar entrar nuestros agentes a su
+                workflow — y a darnos su criterio sin filtros.
               </li>
               <li>
-                Una hora semanal de feedback con su equipo de operaciones.
+                Una hora semanal con tu equipo de operaciones, para
+                iterar sobre lo que funciona y lo que sobra.
               </li>
               <li>
                 Acceso a sus templates actuales, contratos de proveedores
-                preferentes, y branding (logo, paleta, tipografías ya
-                tenemos).
+                preferentes, y la libertad de moldear el roadmap junto a
+                nosotros.
               </li>
               <li>
-                Una decisión al día 90: continuamos como partner formal, o
-                cerramos limpio sin compromiso.
+                Una conversación abierta sobre dirección: lo que
+                construimos juntos en los próximos meses define cómo se
+                ve la categoría después.
               </li>
             </ul>
           </div>
